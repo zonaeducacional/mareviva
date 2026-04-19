@@ -2384,7 +2384,7 @@ function logoutAdmin() {
 let currentSponsors = [];
 
 function listenSponsors() {
-  db.collection('sponsors').orderBy('createdAt', 'desc').onSnapshot((snapshot) => {
+  db.collection('sponsors').onSnapshot((snapshot) => {
     currentSponsors = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     renderSponsorCarousel();
     renderSponsoredTip();
