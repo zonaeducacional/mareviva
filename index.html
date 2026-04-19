@@ -960,9 +960,6 @@ html { overflow-x: hidden; width: 100%; }
         <button class="install-btn" id="installBtn">Instalar</button>
       </div>
 
-      <!-- SPONSOR CAROUSEL (Hidden if empty) -->
-      <div id="sponsorCarousel" class="fade-in" style="display:none; margin-bottom:12px; min-height: 0;"></div>
-
       <div class="home-hero fade-in">
         <div class="hero-text">
           <h1>Bom dia, pescador! 🌊</h1>
@@ -970,6 +967,9 @@ html { overflow-x: hidden; width: 100%; }
         </div>
         <div class="hero-moon" id="heroMoon">🌕</div>
       </div>
+
+      <!-- SPONSOR CAROUSEL (Hidden if empty) -->
+      <div id="sponsorCarousel" class="fade-in" style="display:none; margin-bottom:12px; min-height: 0;"></div>
 
       <div class="status-row fade-in">
         <div class="status-mini" onclick="navigateTo('mare')">
@@ -2392,20 +2392,29 @@ function listenSponsors() {
   });
 }
 
+function safeOpen(url) {
+  if (!url || url === '#') return;
+  const finalUrl = url.startsWith('http') ? url : `https://${url}`;
+  window.open(finalUrl, '_blank');
+}
+
 function renderSponsorCarousel() {
   const container = document.getElementById('sponsorCarousel');
-  if (!container) return; if (currentSponsors.length === 0) { container.style.display = 'none';
-    if (container) container.innerHTML = '';
+  if (!container) return;
+
+  if (currentSponsors.length === 0) {
+    container.style.display = 'none';
+    container.innerHTML = '';
     return;
   }
-  container.style.display = 'block';
 
+  container.style.display = 'block';
   let idx = 0;
   const updateBanner = () => {
     const s = currentSponsors[idx];
     if (!s) return;
     container.innerHTML = `
-      <div class="card fade-in" style="background:linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.1)); border: 1px solid var(--glass-border); cursor:pointer; padding: 12px 16px; display: flex; align-items: center; gap: 12px;" onclick="window.open('${s.link}', '_blank')">
+      <div class="card fade-in" style="background:linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.1)); border: 1px solid var(--glass-border); cursor:pointer; padding: 12px 16px; display: flex; align-items: center; gap: 12px;" onclick="safeOpen('${s.link}')">
         <div style="font-size:24px">🏬</div>
         <div style="flex: 1">
           <h4 style="color:var(--teal-light); font-size: 14px; font-weight: 800;">${s.nome}</h4>
