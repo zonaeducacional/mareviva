@@ -19,6 +19,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
 
 <style>
 :root {
@@ -1381,6 +1382,7 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+const analytics = firebase.analytics();
 
 // ============================================================
 // MARÉ VIVA – APP LOGIC
@@ -1392,8 +1394,16 @@ const LAT = -13.0033;
 const LON = -38.7669;
 
 // ---- GLOBAL UTILS ----
-function safeOpen(url) {
+function safeOpen(url, sponsorName = 'Geral') {
   if (!url || url === '#' || url === '') return;
+  
+  // Rastreia o clique no Analytics para mostrar aos patrocinadores
+  analytics.logEvent('select_promotion', {
+    promotion_id: sponsorName,
+    promotion_name: 'Clique_Patrocinador',
+    creative_name: url
+  });
+
   const cleanUrl = url.trim();
   const finalUrl = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
   console.log('Abrindo link seguro:', finalUrl);
@@ -2419,7 +2429,7 @@ function renderSponsorCarousel() {
     const s = currentSponsors[idx];
     if (!s) return;
     container.innerHTML = `
-      <div class="card fade-in" style="background:linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.1)); border: 1px solid var(--glass-border); cursor:pointer; padding: 14px 16px; display: flex; align-items: center; gap: 15px; position: relative; overflow: hidden;" onclick="safeOpen('${s.link}')">
+      <div class="card fade-in" style="background:linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.1)); border: 1px solid var(--glass-border); cursor:pointer; padding: 14px 16px; display: flex; align-items: center; gap: 15px; position: relative; overflow: hidden;" onclick="safeOpen('${s.link}', '${s.nome}')">
         <div style="flex: 1; padding-bottom: 5px;">
           <h4 style="color:var(--teal-light); font-size: 15px; font-weight: 800;">${s.nome}</h4>
           <p style="color:var(--text-primary); font-size: 13px; margin-top: 2px; line-height: 1.2">${s.frase}</p>
@@ -2449,7 +2459,7 @@ function renderSponsoredTip() {
     const s = currentSponsors[Math.floor(Math.random() * currentSponsors.length)];
     const tipSpan = tipEl.querySelector('span:last-child');
     if (tipSpan) {
-      tipSpan.innerHTML = `<strong>Dica do Parceiro (${s.nome}):</strong> ${s.frase}. <span onclick="safeOpen('${s.link}')" style="color:var(--teal-light);cursor:pointer; font-weight: 700; text-decoration: underline;">Saiba mais ➔</span>`;
+      tipSpan.innerHTML = `<strong>Dica do Parceiro (${s.nome}):</strong> ${s.frase}. <span onclick="safeOpen('${s.link}', '${s.nome}')" style="color:var(--teal-light);cursor:pointer; font-weight: 700; text-decoration: underline;">Saiba mais ➔</span>`;
       tipEl.style.borderColor = 'var(--teal)';
       tipEl.style.background = 'rgba(10, 191, 188, 0.15)';
     }
