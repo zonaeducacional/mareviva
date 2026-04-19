@@ -1,0 +1,2537 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a2744">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Maré Viva">
+<meta name="description" content="App para pescadores e marisqueiras de Salinas da Margarida">
+<title>Maré Viva – Salinas da Margarida</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Maré Viva">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
+
+<style>
+:root {
+  --ocean-deep: #051829;
+  --ocean-bright: #0a4060;
+  --teal: #0abfbc;
+  --teal-light: #4ade80;
+  --text-primary: #ffffff;
+  --text-muted: #94a3b8;
+  --glass: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --red-alert: #f87171;
+}
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--ocean-deep);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  width: 100%;
+  position: relative;
+  touch-action: manipulation;
+}
+
+html { overflow-x: hidden; width: 100%; }
+
+/* ANIMATED OCEAN BACKGROUND */
+.ocean-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(180deg, #051829 0%, #0a2744 35%, #0d3b6e 70%, #0a4060 100%);
+  overflow: hidden;
+}
+
+.wave-layer {
+  position: absolute;
+  bottom: 0;
+  left: -100%;
+  width: 300%;
+  height: 200px;
+  opacity: 0.15;
+  animation: waveAnim 8s linear infinite;
+}
+.wave-layer:nth-child(2) { animation-duration: 12s; animation-direction: reverse; opacity: 0.1; bottom: 20px; }
+.wave-layer:nth-child(3) { animation-duration: 16s; opacity: 0.07; bottom: 40px; }
+
+@keyframes waveAnim {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(33.33%); }
+}
+
+.stars {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 60%;
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 50% 15%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 75% 25%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 10% 50%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 10%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 35% 45%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 65% 5%, rgba(255,255,255,0.4) 0%, transparent 100%);
+}
+
+/* LAYOUT */
+#app {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* HEADER */
+.app-header {
+  padding: 16px 20px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: linear-gradient(180deg, rgba(5,24,41,0.95) 0%, rgba(5,24,41,0.8) 100%);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.app-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.logo-icon {
+  width: 38px; height: 38px;
+  background: linear-gradient(135deg, var(--teal), var(--ocean-bright));
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+}
+.logo-text {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+}
+.logo-sub {
+  font-size: 9px;
+  font-weight: 400;
+  color: var(--teal-light);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  display: block;
+  margin-top: 2px;
+}
+
+.header-right {
+  display: flex; align-items: center; gap: 8px;
+}
+
+.offline-badge {
+  font-size: 9px;
+  padding: 3px 7px;
+  border-radius: 20px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  transition: all 0.3s;
+}
+.offline-badge.online { background: rgba(22,163,74,0.2); color: #4ade80; border: 1px solid rgba(22,163,74,0.4); }
+.offline-badge.offline { background: rgba(220,38,38,0.2); color: #f87171; border: 1px solid rgba(220,38,38,0.4); }
+
+.datetime-badge {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: right;
+  line-height: 1.3;
+}
+
+/* MAIN CONTENT */
+.main-content {
+  flex: 1;
+  padding: 16px;
+  padding-bottom: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* SCREENS */
+.screen { display: none; flex-direction: column; gap: 16px; }
+.screen.active { display: flex; }
+
+/* CARDS */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 18px;
+  padding: 18px;
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+}
+
+.card-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--teal-light);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* MOON PHASE CARD */
+.moon-display {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.moon-visual {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  position: relative;
+  flex-shrink: 0;
+  box-shadow: 0 0 30px rgba(251, 191, 36, 0.3);
+}
+.moon-info h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.moon-info p {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+.moon-detail {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+.moon-stat {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  text-align: center;
+}
+.moon-stat span:first-child {
+  display: block;
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.moon-stat span:last-child {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--moon);
+  margin-top: 2px;
+}
+
+/* TIDE TABLE */
+.tide-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.tide-item {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.tide-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+.tide-details span:first-child {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.tide-details strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+}
+.tide-details em {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--teal-light);
+}
+
+.tide-bar-container {
+  margin-top: 14px;
+}
+.tide-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.tide-bar-track {
+  height: 6px;
+  background: var(--glass);
+  border-radius: 10px;
+  position: relative;
+  overflow: hidden;
+}
+.tide-bar-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--ocean-bright), var(--teal));
+  transition: width 1s ease;
+}
+.tide-indicator {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px; height: 12px;
+  background: var(--white);
+  border-radius: 50%;
+  border: 2px solid var(--teal);
+  box-shadow: 0 0 8px var(--teal);
+  transition: left 1s ease;
+}
+
+/* WEATHER CARD */
+.weather-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.weather-temp {
+  font-family: 'Syne', sans-serif;
+  font-size: 52px;
+  font-weight: 800;
+  line-height: 1;
+}
+.weather-temp sup {
+  font-size: 20px;
+  vertical-align: super;
+  font-weight: 400;
+}
+.weather-icon-big { font-size: 56px; line-height: 1; }
+.weather-desc {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+.weather-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 14px;
+}
+.weather-stat {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  padding: 10px 8px;
+  text-align: center;
+}
+.weather-stat span { display: block; }
+.weather-stat .ws-label { font-size: 10px; color: var(--text-muted); }
+.weather-stat .ws-value { font-size: 15px; font-weight: 700; margin-top: 2px; }
+.weather-stat .ws-icon { font-size: 16px; margin-bottom: 2px; }
+
+.forecast-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+.forecast-row::-webkit-scrollbar { display: none; }
+.forecast-item {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  text-align: center;
+  flex-shrink: 0;
+  min-width: 64px;
+}
+.forecast-item span { display: block; font-size: 10px; color: var(--text-muted); }
+.forecast-item .fi-icon { font-size: 18px; margin: 4px 0; }
+.forecast-item .fi-temp { font-size: 13px; font-weight: 700; }
+
+/* FISH CARD */
+.fish-zones {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.fish-zone {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.fish-zone-indicator {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.fish-zone-indicator.high { background: #4ade80; box-shadow: 0 0 8px #4ade80; }
+.fish-zone-indicator.medium { background: var(--moon-glow); box-shadow: 0 0 8px var(--moon-glow); }
+.fish-zone-indicator.low { background: #f87171; box-shadow: 0 0 8px #f87171; }
+
+.fish-zone-info { flex: 1; }
+.fish-zone-info h4 { font-size: 14px; font-weight: 700; }
+.fish-zone-info p { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.fish-zone-species {
+  font-size: 11px;
+  color: var(--teal-light);
+  font-weight: 600;
+}
+
+.fish-tip {
+  background: rgba(10, 191, 188, 0.1);
+  border: 1px solid rgba(10, 191, 188, 0.3);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--teal-light);
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+/* DEFESO CARD */
+.defeso-alert {
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.defeso-alert.active {
+  background: rgba(220, 38, 38, 0.15);
+  border: 1px solid rgba(220, 38, 38, 0.4);
+}
+.defeso-alert.upcoming {
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+.defeso-alert.safe {
+  background: rgba(22, 163, 74, 0.1);
+  border: 1px solid rgba(22, 163, 74, 0.3);
+}
+.defeso-icon { font-size: 24px; flex-shrink: 0; }
+.defeso-text h4 { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+.defeso-text p { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+.defeso-text strong { color: var(--text-primary); }
+
+.defeso-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.defeso-species-item {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.defeso-species-item span { font-size: 13px; }
+.defeso-tag {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.tag-active { background: rgba(220,38,38,0.2); color: #f87171; }
+.tag-open { background: rgba(22,163,74,0.2); color: #4ade80; }
+.tag-soon { background: rgba(251,191,36,0.2); color: #fbbf24; }
+
+/* NOTES */
+.notes-input-area {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.notes-input-area textarea {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  resize: none;
+  width: 100%;
+  min-height: 80px;
+  line-height: 1.5;
+}
+.notes-input-area textarea::placeholder { color: var(--text-muted); }
+.notes-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.note-tag-btn {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Nunito', sans-serif;
+}
+.note-tag-btn.selected {
+  background: rgba(10, 191, 188, 0.2);
+  border-color: var(--teal);
+  color: var(--teal-light);
+}
+.save-note-btn {
+  background: linear-gradient(135deg, var(--teal), var(--ocean-bright));
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  color: var(--white);
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  transition: opacity 0.2s;
+  letter-spacing: 1px;
+}
+.save-note-btn:active { opacity: 0.8; }
+
+.notes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.note-item {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  position: relative;
+  animation: noteSlideIn 0.3s ease;
+}
+@keyframes noteSlideIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.note-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+.note-category {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 3px 8px;
+  border-radius: 20px;
+}
+.note-date { font-size: 11px; color: var(--text-muted); }
+.note-content { font-size: 13px; line-height: 1.5; }
+.note-delete {
+  position: absolute;
+  top: 12px; right: 14px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+  line-height: 1;
+}
+
+/* QUICK TIPS */
+.tip-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.tip-card {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 14px 12px;
+  text-align: center;
+}
+.tip-card .tip-emoji { font-size: 28px; display: block; margin-bottom: 6px; }
+.tip-card h4 { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+.tip-card p { font-size: 11px; color: var(--text-muted); line-height: 1.4; }
+
+/* BOTTOM NAV */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  background: rgba(5, 24, 41, 0.95);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid var(--glass-border);
+  display: flex;
+  z-index: 100;
+  padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+}
+
+.nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 4px;
+  transition: all 0.2s;
+  position: relative;
+}
+.nav-btn .nav-icon { font-size: 20px; line-height: 1; transition: transform 0.2s; }
+.nav-btn .nav-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-family: 'Nunito', sans-serif;
+  transition: color 0.2s;
+}
+.nav-btn.active .nav-label { color: var(--teal-light); }
+.nav-btn.active .nav-icon { transform: scale(1.1); }
+.nav-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  width: 20px; height: 2px;
+  border-radius: 0 0 4px 4px;
+  background: var(--teal);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.nav-btn.active::after { opacity: 1; }
+
+/* HOME HERO */
+.home-hero {
+  background: linear-gradient(135deg, rgba(13, 59, 110, 0.7), rgba(10, 64, 96, 0.7));
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  overflow: hidden;
+  position: relative;
+}
+.home-hero::after {
+  content: '🌊';
+  position: absolute;
+  bottom: -10px; right: -10px;
+  font-size: 80px;
+  opacity: 0.07;
+  transform: rotate(-15deg);
+}
+.hero-text h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+.hero-text p { font-size: 13px; color: var(--text-muted); margin-top: 6px; line-height: 1.4; }
+
+.hero-moon { font-size: 56px; line-height: 1; animation: moonFloat 4s ease-in-out infinite; }
+@keyframes moonFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+/* STATUS ROW */
+.status-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.status-mini {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  padding: 12px 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+}
+.status-mini:active { transform: scale(0.96); }
+.status-mini .sm-icon { font-size: 24px; display: block; margin-bottom: 4px; }
+.status-mini .sm-label { font-size: 10px; color: var(--text-muted); display: block; }
+.status-mini .sm-value { font-size: 13px; font-weight: 700; display: block; margin-top: 2px; }
+
+/* SECTION DIVIDER */
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.section-divider::before, .section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--glass-border);
+}
+
+/* INSTALL BANNER */
+.install-banner {
+  background: linear-gradient(135deg, rgba(10,191,188,0.15), rgba(41,134,204,0.15));
+  border: 1px solid rgba(10,191,188,0.3);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+.install-banner.hidden { display: none; }
+.install-text h4 { font-size: 14px; font-weight: 700; }
+.install-text p { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.install-btn {
+  background: linear-gradient(135deg, var(--teal), var(--ocean-bright));
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  color: white;
+  font-family: 'Nunito', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* SCROLL ANIMATIONS */
+.fade-in {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeInUp 0.4s ease forwards;
+}
+@keyframes fadeInUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in:nth-child(1) { animation-delay: 0.05s; }
+.fade-in:nth-child(2) { animation-delay: 0.1s; }
+.fade-in:nth-child(3) { animation-delay: 0.15s; }
+.fade-in:nth-child(4) { animation-delay: 0.2s; }
+.fade-in:nth-child(5) { animation-delay: 0.25s; }
+
+/* LOADING SPINNER */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid var(--glass-border);
+  border-top-color: var(--teal);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* SNACKBAR */
+.snackbar {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(10, 191, 188, 0.95);
+  color: var(--ocean-deep);
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  opacity: 0;
+  transition: all 0.3s;
+  z-index: 200;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.snackbar.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* MOON PHASES */
+.moon-phases-row {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 10px;
+}
+.moon-phase-mini {
+  text-align: center;
+  cursor: pointer;
+}
+.moon-phase-mini .mp-symbol { font-size: 22px; display: block; }
+.moon-phase-mini .mp-name { font-size: 9px; color: var(--text-muted); margin-top: 2px; display: block; }
+.moon-phase-mini.current .mp-symbol { filter: drop-shadow(0 0 6px var(--moon-glow)); }
+.moon-phase-mini.current .mp-name { color: var(--moon-glow); font-weight: 700; }
+
+/* USEFUL INFO ACCORDION */
+.accordion-item {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.accordion-header {
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+}
+.accordion-arrow {
+  font-size: 12px;
+  transition: transform 0.3s;
+  color: var(--text-muted);
+}
+.accordion-item.open .accordion-arrow { transform: rotate(180deg); }
+.accordion-body {
+  display: none;
+  padding: 0 16px 14px;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.accordion-item.open .accordion-body { display: block; }
+
+/* CATEGORY COLORS */
+.cat-pesca { background: rgba(41,134,204,0.2); color: #7dd3fc; }
+.cat-marisqueira { background: rgba(10,191,188,0.2); color: var(--teal-light); }
+.cat-tempo { background: rgba(251,191,36,0.2); color: #fbbf24; }
+.cat-geral { background: rgba(255,255,255,0.1); color: var(--text-muted); }
+
+/* RESPONSIVE FINE-TUNING */
+@media (max-width: 360px) {
+  .main-content { padding: 12px; }
+  .app-header { padding: 12px 14px; }
+  .weather-temp { font-size: 42px; }
+}
+/* IOS INSTALL INSTRUCTIONS MODAL */ 
+.ios-modal { 
+  position: fixed; 
+  inset: 0; 
+  z-index: 1000; 
+  background: rgba(0,0,0,0.8); 
+  backdrop-filter: blur(5px); 
+  display: none; 
+  align-items: flex-end; 
+  justify-content: center; 
+  padding-bottom: 20px; 
+} 
+.ios-modal.show { display: flex; } 
+.ios-content { 
+  background: var(--ocean-mid); 
+  width: 90%; 
+  max-width: 400px; 
+  border-radius: 24px; 
+  padding: 24px; 
+  border: 1px solid var(--glass-border); 
+  box-shadow: 0 -10px 40px rgba(0,0,0,0.5); 
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
+  position: relative; 
+} 
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } } 
+.ios-content h3 { font-family: "Syne", sans-serif; margin-bottom: 12px; color: var(--white); } 
+.ios-step { display: flex; align-items: center; gap: 15px; margin-bottom: 16px; } 
+.ios-step-num { 
+  width: 24px; height: 24px; background: var(--teal); border-radius: 50%; 
+  display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; 
+} 
+.ios-icon-share { font-size: 20px; color: #007aff; } 
+.ios-close { 
+  position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.1); 
+  border: none; color: white; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; 
+}
+</style>
+</head>
+<body>
+
+<div class="ocean-bg">
+  <div class="stars"></div>
+  <svg class="wave-layer" viewBox="0 0 1200 200" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,100 C300,40 600,160 900,80 C1050,40 1150,120 1200,100 L1200,200 L0,200 Z" fill="#0d3b6e"/>
+  </svg>
+  <svg class="wave-layer" viewBox="0 0 1200 200" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,120 C200,60 500,180 800,90 C1000,30 1100,140 1200,110 L1200,200 L0,200 Z" fill="#0a4060"/>
+  </svg>
+  <svg class="wave-layer" viewBox="0 0 1200 200" xmlns="http://www.w3.org/2000/svg">
+    <path d="M0,80 C250,150 550,40 850,130 C1000,170 1150,60 1200,90 L1200,200 L0,200 Z" fill="#051829"/>
+  </svg>
+</div>
+
+<div id="app">
+  <header class="app-header">
+    <div class="app-logo">
+      <div class="logo-icon">⚓</div>
+      <div>
+        <span class="logo-text">Maré Viva</span>
+        <span class="logo-sub">Salinas da Margarida</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="datetime-badge" id="datetimeBadge"></div>
+      <span class="offline-badge online" id="onlineBadge">● Online</span>
+    </div>
+  </header>
+
+  <main class="main-content">
+
+    <!-- HOME SCREEN -->
+    <section class="screen active" id="screen-home">
+      <div class="install-banner hidden" id="installBanner">
+        <div class="install-text">
+          <h4>📲 Instalar App</h4>
+          <p>Use sem internet, na palma da mão</p>
+        </div>
+        <button class="install-btn" id="installBtn">Instalar</button>
+      </div>
+
+      <div class="home-hero fade-in">
+        <div class="hero-text">
+          <h1>Bom dia, povo do mar! 🌊</h1>
+          <p>Condições da Baía de Todos os Santos para hoje</p>
+        </div>
+        <div class="hero-moon" id="heroMoon">🌕</div>
+      </div>
+
+      <!-- SPONSOR CAROUSEL (Hidden if empty) -->
+      <div id="sponsorCarousel" class="fade-in" style="display:none; margin-bottom:12px; min-height: 0;"></div>
+
+      <div class="status-row fade-in">
+        <div class="status-mini" onclick="navigateTo('mare')">
+          <span class="sm-icon">🌊</span>
+          <span class="sm-label">Maré Agora</span>
+          <span class="sm-value" id="homeTide">--</span>
+        </div>
+        <div class="status-mini" onclick="navigateTo('tempo')">
+          <span class="sm-icon">🌡️</span>
+          <span class="sm-label">Temperatura</span>
+          <span class="sm-value" id="homeTemp">28°C</span>
+        </div>
+        <div class="status-mini" onclick="navigateTo('pesca')">
+          <span class="sm-icon">🐟</span>
+          <span class="sm-label">Pesca Hoje</span>
+          <span class="sm-value" id="homeFish">Boa</span>
+        </div>
+      </div>
+
+      <div class="section-divider fade-in">Resumo do Dia</div>
+
+      <!-- Quick Moon Card -->
+      <div class="card fade-in">
+        <div class="card-title">🌙 Lua de Hoje</div>
+        <div class="moon-display">
+          <div class="moon-visual" id="moonVisualHome"></div>
+          <div class="moon-info">
+            <h2 id="moonNameHome">Lua Cheia</h2>
+            <p id="moonDescHome">Marés intensas – ótimo para pesca noturna</p>
+            <div class="moon-detail">
+              <div class="moon-stat">
+                <span>Nasce</span>
+                <span id="moonrise">18:22</span>
+              </div>
+              <div class="moon-stat">
+                <span>Iluminação</span>
+                <span id="moonIllum">98%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Tide -->
+      <div class="card fade-in">
+        <div class="card-title">🌊 Próximas Marés</div>
+        <div id="quickTideList"></div>
+      </div>
+
+      <!-- Defeso Alert -->
+      <div id="homeDefesoAlert" class="fade-in"></div>
+
+      <!-- Quick Tips -->
+      <div class="section-divider fade-in">Dicas Rápidas</div>
+      <div class="tip-grid fade-in">
+        <div class="tip-card">
+          <span class="tip-emoji">🦀</span>
+          <h4>Marisco</h4>
+          <p>Melhor coleta 2h antes da baixa-mar</p>
+        </div>
+        <div class="tip-card">
+          <span class="tip-emoji">🎣</span>
+          <h4>Pesca</h4>
+          <p>Aurora e crepúsculo são os melhores horários</p>
+        </div>
+        <div class="tip-card">
+          <span class="tip-emoji">💨</span>
+          <h4>Vento</h4>
+          <p>NE fraco favorece saída para o mangue</p>
+        </div>
+        <div class="tip-card">
+          <span class="tip-emoji">🌕</span>
+          <h4>Lua Cheia</h4>
+          <p>Marés vivas, peixe mais ativo à noite</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- MARÉ SCREEN -->
+    <section class="screen" id="screen-mare">
+      <div class="card fade-in">
+        <div class="card-title">🌙 Fase da Lua</div>
+        <div class="moon-display">
+          <div class="moon-visual" id="moonVisualMare"></div>
+          <div class="moon-info">
+            <h2 id="moonNameMare">Lua Cheia</h2>
+            <p id="moonDescMare">Marés de sizígia – amplitude máxima</p>
+          </div>
+        </div>
+        <div class="moon-phases-row" id="moonPhasesRow"></div>
+      </div>
+
+      <div class="card fade-in">
+        <div class="card-title">📅 Próximas Fases</div>
+        <div id="nextPhasesContainer"></div>
+      </div>
+
+      <div class="card fade-in">
+        <div class="card-title">🌊 Tábua de Marés – Hoje</div>
+        <p style="font-size:11px;color:var(--text-muted);margin-bottom:12px;">Referência: Salinas da Margarida, BA | Hora local</p>
+        <div class="tide-grid" id="tideGrid"></div>
+        <div class="tide-bar-container">
+          <div class="tide-bar-label">
+            <span>Baixa-mar</span>
+            <span id="tideNowLabel">Maré subindo</span>
+            <span>Preamar</span>
+          </div>
+          <div class="tide-bar-track">
+            <div class="tide-bar-fill" id="tideBarFill" style="width:0%"></div>
+            <div class="tide-indicator" id="tideIndicator" style="left:0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card fade-in">
+        <div class="card-title">📆 Marés dos Próximos Dias</div>
+        <div id="weekTideContainer"></div>
+      </div>
+    </section>
+
+    <!-- TEMPO SCREEN -->
+    <section class="screen" id="screen-tempo">
+      <div class="card fade-in">
+        <div class="card-title">☀️ Tempo Agora – Salinas da Margarida</div>
+        <div class="weather-main">
+          <div>
+            <div class="weather-temp"><span id="wTemp">28</span><sup>°C</sup></div>
+            <div class="weather-desc" id="wDesc">Parcialmente nublado</div>
+          </div>
+          <div class="weather-icon-big" id="wIcon">⛅</div>
+        </div>
+        <div class="weather-stats">
+          <div class="weather-stat">
+            <span class="ws-icon">💧</span>
+            <span class="ws-label">Umidade</span>
+            <span class="ws-value" id="wHumidity">78%</span>
+          </div>
+          <div class="weather-stat">
+            <span class="ws-icon">💨</span>
+            <span class="ws-label">Vento</span>
+            <span class="ws-value" id="wWind">12 km/h</span>
+          </div>
+          <div class="weather-stat">
+            <span class="ws-icon">👁️</span>
+            <span class="ws-label">Visib.</span>
+            <span class="ws-value" id="wVis">8 km</span>
+          </div>
+        </div>
+        <div class="weather-stats" style="margin-top:8px">
+          <div class="weather-stat">
+            <span class="ws-icon">🌅</span>
+            <span class="ws-label">Nascer</span>
+            <span class="ws-value" id="wSunrise">05:42</span>
+          </div>
+          <div class="weather-stat">
+            <span class="ws-icon">🌇</span>
+            <span class="ws-label">Pôr do Sol</span>
+            <span class="ws-value" id="wSunset">17:48</span>
+          </div>
+          <div class="weather-stat">
+            <span class="ws-icon">🌊</span>
+            <span class="ws-label">Mar</span>
+            <span class="ws-value" id="wSea">Leve</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card fade-in">
+        <div class="card-title">📅 Previsão 5 Dias</div>
+        <div class="forecast-row" id="forecastRow"></div>
+      </div>
+
+      <div class="card fade-in">
+        <div class="card-title">⚠️ Alertas Meteorológicos</div>
+        <div id="weatherAlerts"></div>
+      </div>
+
+      <div class="card fade-in">
+        <div class="card-title">🌬️ Condições para Navegação</div>
+        <div id="navConditions"></div>
+      </div>
+    </section>
+
+    <!-- PESCA SCREEN -->
+    <section class="screen" id="screen-pesca">
+      <div class="card fade-in">
+        <div class="card-title">🐟 Movimentação de Cardumes – BTS</div>
+        <p style="font-size:11px;color:var(--text-muted);margin-bottom:12px;">Baía de Todos os Santos – baseado em lua, maré e temperatura</p>
+        <div class="fish-zones" id="fishZones"></div>
+        <div class="fish-tip" id="fishTip">
+          <span>💡</span>
+          <span></span>
+        </div>
+      </div>
+
+      <div class="card fade-in">
+        <div class="card-title">🦐 Marisqueiras – Melhores Horários</div>
+        <div id="marisqueiraInfo"></div>
+      </div>
+
+      <div class="card fade-in">
+        <div class="card-title">🗓️ Defesos e Períodos Proibidos</div>
+        <div id="defesosContainer"></div>
+      </div>
+
+      <div class="card fade-in">
+        <div class="card-title">📋 Espécies da Região</div>
+        <div class="defeso-list" id="speciesList"></div>
+      </div>
+    </section>
+
+    <!-- ANOTAÇÕES SCREEN -->
+    <section class="screen" id="screen-notas">
+      <div class="card fade-in">
+        <div class="card-title">✏️ Nova Anotação</div>
+        <div class="notes-input-area">
+          <textarea id="noteText" placeholder="Anote aqui: local de pesca, quantidade capturada, condições do mar, espécies encontradas..." rows="4"></textarea>
+          <div class="notes-meta">
+            <button class="note-tag-btn selected" data-cat="pesca" onclick="selectCat(this)">🎣 Pesca</button>
+            <button class="note-tag-btn" data-cat="marisqueira" onclick="selectCat(this)">🦀 Marisco</button>
+            <button class="note-tag-btn" data-cat="tempo" onclick="selectCat(this)">🌤 Tempo</button>
+            <button class="note-tag-btn" data-cat="geral" onclick="selectCat(this)">📝 Geral</button>
+          </div>
+          <button class="save-note-btn" onclick="saveNote()">💾 SALVAR ANOTAÇÃO</button>
+        </div>
+      </div>
+
+      <div class="section-divider fade-in">Anotações Salvas (<span id="notesCount">0</span>)</div>
+
+      <div class="notes-list" id="notesList">
+        <div style="text-align:center;padding:30px;color:var(--text-muted);font-size:13px;">
+          <div style="font-size:36px;margin-bottom:8px;">📓</div>
+          Suas anotações aparecerão aqui.<br>Salvas no dispositivo, funcionam sem internet.
+        </div>
+      </div>
+    </section>
+
+    <!-- INFO SCREEN -->
+    <section class="screen" id="screen-info">
+      <div class="card fade-in">
+        <div class="card-title">⚓ Sobre o App</div>
+        <p style="font-size:13px;line-height:1.6;color:var(--text-muted);">
+          <strong style="color:var(--text-primary)">Maré Viva</strong> foi desenvolvido especialmente para a comunidade pesqueira de <strong style="color:var(--teal-light)">Salinas da Margarida, Bahia</strong>. Funciona <strong style="color:var(--text-primary)">offline</strong> depois de instalado, mantendo as informações essenciais disponíveis mesmo sem sinal.
+        </p>
+      </div>
+
+      <div class="card fade-in">
+        <div class="card-title">📞 Contatos Importantes</div>
+        <div class="accordion-item open">
+          <div class="accordion-header" onclick="toggleAccordion(this)">
+            🆘 Emergências Marítimas <span class="accordion-arrow">▼</span>
+          </div>
+          <div class="accordion-body">
+            <strong>Capitania dos Portos da Bahia:</strong> (71) 3254-6500<br>
+            <strong>SALVAMAR Nordeste:</strong> 185 (gratuito)<br>
+            <strong>Bombeiros:</strong> 193<br>
+            <strong>SAMU:</strong> 192<br>
+            <strong>Guarda Costeira:</strong> 0800 285 1591
+          </div>
+        </div>
+        <div class="accordion-item">
+          <div class="accordion-header" onclick="toggleAccordion(this)">
+            🏛️ Órgãos de Pesca <span class="accordion-arrow">▼</span>
+          </div>
+          <div class="accordion-body">
+            <strong>IBAMA BA:</strong> (71) 3116-9500<br>
+            <strong>SEAP (Sec. Aquicultura e Pesca):</strong> 0800 061 9819<br>
+            <strong>Ministério da Pesca:</strong> (61) 2023-6000<br>
+            <strong>Colônia Z-39 Salinas:</strong> (75) 3335-1234
+          </div>
+        </div>
+        <div class="accordion-item">
+          <div class="accordion-header" onclick="toggleAccordion(this)">
+            💰 Seguro Defeso <span class="accordion-arrow">▼</span>
+          </div>
+          <div class="accordion-body">
+            O Seguro Defeso é pago pelo Ministério do Trabalho durante os períodos de proibição da pesca. <strong>Documentos necessários:</strong> RGP (Registro Geral da Pesca), CPF, comprovante de residência e declaração de pesca. Acesse pelo CNIS ou presencialmente no INSS.
+          </div>
+        </div>
+        <div class="accordion-item">
+          <div class="accordion-header" onclick="toggleAccordion(this)">
+            📜 Legislação Pesqueira <span class="accordion-arrow">▼</span>
+          </div>
+          <div class="accordion-body">
+            <strong>Lei 11.959/2009:</strong> Política Nacional de Desenvolvimento da Aquicultura e da Pesca.<br><br>
+            <strong>Tamanho mínimo de captura (BTS):</strong><br>
+            • Camarão: 10 cm<br>
+            • Sirizinho: 6 cm<br>
+            • Robalo: 40 cm<br>
+            • Tainha: 30 cm<br>
+            • Vermelho: 30 cm
+          </div>
+        </div>
+        <div class="accordion-item">
+          <div class="accordion-header" onclick="toggleAccordion(this)">
+            ⚓ Licenças e RGP <span class="accordion-arrow">▼</span>
+          </div>
+          <div class="accordion-body">
+            O <strong>RGP (Registro Geral da Pesca)</strong> é obrigatório para exercer a pesca profissional. Renove anualmente pelo portal <strong>gov.br/pescador</strong> ou na Capitania dos Portos. Leve: RG, CPF, comprovante de residência e foto.
+          </div>
+        </div>
+      </div>
+
+      <div class="card fade-in">
+        <div class="card-title">🌿 Sustentabilidade</div>
+        <div class="accordion-item">
+          <div class="accordion-header" onclick="toggleAccordion(this)">
+            🐚 Boas Práticas de Coleta <span class="accordion-arrow">▼</span>
+          </div>
+          <div class="accordion-body">
+            • Respeite os tamanhos mínimos de captura<br>
+            • Devolva os animais pequenos ao mar<br>
+            • Não retire matrizes (fêmeas com ovos)<br>
+            • Evite áreas de berçário nos manguezais<br>
+            • Rotacione os pontos de coleta do marisco
+          </div>
+        </div>
+        <div class="accordion-item">
+          <div class="accordion-header" onclick="toggleAccordion(this)">
+            🌊 Conservação do Manguezal <span class="accordion-arrow">▼</span>
+          </div>
+          <div class="accordion-body">
+            O manguezal é berçário de 70% das espécies marinhas da BTS. Não desmate, não deposite lixo e denuncie degradação ao IBAMA: 0800 618 080.
+          </div>
+        </div>
+      </div>
+
+      <div class="card fade-in" style="text-align:center">
+        <div style="font-size:32px;margin-bottom:8px">⚓</div>
+        <p style="font-size:12px;color:var(--text-muted);line-height:1.5">
+            Maré Viva v1.5<br>
+          Feito com 💙 para a comunidade de<br>
+          <strong style="color:var(--teal-light)">Salinas da Margarida</strong>
+        </p>
+      </div>
+    </section>
+
+    <!-- ADMIN SCREEN (HIDDEN) -->
+    <section class="screen" id="screen-admin">
+      <div class="card fade-in">
+        <div class="card-title">🔐 Painel do Professor</div>
+        <div id="admin-auth" style="display:flex;flex-direction:column;gap:12px;text-align:center;padding:20px 0">
+          <p style="font-size:13px;color:var(--text-muted)">Digite seu PIN para gerenciar o app</p>
+          <input type="password" id="adminPin" placeholder="PIN" style="background:var(--glass);border:1px solid var(--glass-border);padding:12px;border-radius:10px;color:white;text-align:center;font-size:24px;letter-spacing:10px;width:160px;margin:0 auto">
+          <button class="save-note-btn" onclick="checkAdminAuth()">ENTRAR NO PAINEL</button>
+        </div>
+
+        <div id="admin-panel" style="display:none;flex-direction:column;gap:16px">
+          <div class="section-divider">Novo Patrocinador</div>
+          <div class="notes-input-area">
+            <input type="text" id="sponsorName" placeholder="Nome do Estabelecimento" style="background:transparent;border:none;border-bottom:1px solid var(--glass-border);color:white;padding:8px;font-family:inherit">
+            <input type="text" id="sponsorPhone" placeholder="Telefone (Ex: 75 9999-9999)" style="background:transparent;border:none;border-bottom:1px solid var(--glass-border);color:white;padding:8px;font-family:inherit">
+            <input type="text" id="sponsorText" placeholder="Frase de efeito (Ex: Gelo e Iscas 24h)" style="background:transparent;border:none;border-bottom:1px solid var(--glass-border);color:white;padding:8px;font-family:inherit">
+            <input type="text" id="sponsorAddress" placeholder="Endereço (Ex: Praça Central, Salinas)" style="background:transparent;border:none;border-bottom:1px solid var(--glass-border);color:white;padding:8px;font-family:inherit">
+            <input type="text" id="sponsorLink" placeholder="Link do Anunciante (Site, Insta ou Zap)" style="background:transparent;border:none;border-bottom:1px solid var(--glass-border);color:white;padding:8px;font-family:inherit">
+            <button class="save-note-btn" id="btnSaveSponsor" onclick="saveSponsor()">💾 SALVAR PATROCINADOR</button>
+          </div>
+
+          <div class="section-divider">Patrocinadores Ativos</div>
+          <div id="adminSponsorsList" class="defeso-list"></div>
+          <button class="nav-btn" style="color:var(--red-alert);margin-top:20px" onclick="logoutAdmin()">Sair do Painel</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-btn active" onclick="navigateTo('home')">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">Início</span>
+    </button>
+    <button class="nav-btn" onclick="navigateTo('mare')">
+      <span class="nav-icon">🌊</span>
+      <span class="nav-label">Maré/Lua</span>
+    </button>
+    <button class="nav-btn" onclick="navigateTo('tempo')">
+      <span class="nav-icon">⛅</span>
+      <span class="nav-label">Tempo</span>
+    </button>
+    <button class="nav-btn" onclick="navigateTo('pesca')">
+      <span class="nav-icon">🐟</span>
+      <span class="nav-label">Pesca</span>
+    </button>
+    <button class="nav-btn" onclick="navigateTo('notas')">
+      <span class="nav-icon">📓</span>
+      <span class="nav-label">Notas</span>
+    </button>
+    <button class="nav-btn" onclick="navigateTo('info')">
+      <span class="nav-icon">ℹ️</span>
+      <span class="nav-label">Info</span>
+    </button>
+  </nav>
+</div>
+
+<div class="snackbar" id="snackbar"></div>
+
+<script>
+// ============================================================
+// FIREBASE CONFIG & INIT
+// ============================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyAeoCegOJlHaz_68ML5F7PTFHTqmEcPH5I",
+  authDomain: "app-mare-viva.firebaseapp.com",
+  projectId: "app-mare-viva",
+  storageBucket: "app-mare-viva.firebasestorage.app",
+  messagingSenderId: "162487817564",
+  appId: "1:162487817564:web:6af07d6f2db7af33285d99",
+  measurementId: "G-TGW9S4W6Y7" 
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const analytics = firebase.analytics();
+
+// ============================================================
+// MARÉ VIVA – APP LOGIC
+// Salinas da Margarida, Bahia, Brasil
+// Coords: -13.0033° S, -38.7669° W
+// ============================================================
+
+const LAT = -13.0033;
+const LON = -38.7669;
+
+// ---- GLOBAL UTILS ----
+function safeOpen(url, sponsorName = 'Geral') {
+  if (!url || url === '#' || url === '') return;
+  
+  // Rastreia o clique no Analytics para mostrar aos patrocinadores
+  analytics.logEvent('select_promotion', {
+    promotion_id: sponsorName,
+    promotion_name: 'Clique_Patrocinador',
+    creative_name: url
+  });
+
+  const cleanUrl = url.trim();
+  const finalUrl = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
+  console.log('Abrindo link seguro:', finalUrl);
+  window.open(finalUrl, '_blank');
+}
+
+// ---- NAVIGATION ----
+let currentScreen = 'home';
+const navMap = {
+  home: 0, mare: 1, tempo: 2, pesca: 3, notas: 4, info: 5
+};
+
+function navigateTo(screen) {
+  document.querySelector(`#screen-${currentScreen}`)?.classList.remove('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  currentScreen = screen;
+  const s = document.querySelector(`#screen-${screen}`);
+  s?.classList.add('active');
+  document.querySelectorAll('.nav-btn')[navMap[screen]]?.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ---- DATETIME ----
+function updateDatetime() {
+  const now = new Date();
+  const opts = { weekday: 'short', day: '2-digit', month: '2-digit' };
+  const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const dateStr = now.toLocaleDateString('pt-BR', opts);
+  document.getElementById('datetimeBadge').innerHTML = `${timeStr}<br>${dateStr}`;
+}
+setInterval(updateDatetime, 1000);
+updateDatetime();
+
+// ---- ONLINE/OFFLINE ----
+function updateOnlineStatus() {
+  const badge = document.getElementById('onlineBadge');
+  if (navigator.onLine) {
+    badge.textContent = '● Online';
+    badge.className = 'offline-badge online';
+  } else {
+    badge.textContent = '● Offline';
+    badge.className = 'offline-badge offline';
+  }
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+updateOnlineStatus();
+
+// ---- MOON PHASE CALCULATION ----
+function getMoonPhase(date) {
+  const d = date || new Date();
+  // Julian date
+  const jd = (d.getTime() / 86400000) + 2440587.5;
+  const cycle = 29.53058867;
+  const known = 2451550.1; // known new moon
+  const phase = ((jd - known) % cycle + cycle) % cycle;
+  return phase;
+}
+
+function getMoonInfo(date) {
+  const phase = getMoonPhase(date);
+  const cycle = 29.53058867;
+  const illumination = Math.round((1 - Math.cos(2 * Math.PI * phase / cycle)) / 2 * 100);
+
+  let name, emoji, desc, color, tideType;
+  if (phase < 1.85) {
+    name = 'Lua Nova'; emoji = '🌑'; color = '#374151';
+    desc = 'Marés vivas – excelente para pesca no mangue';
+    tideType = 'Sizígia';
+  } else if (phase < 7.38) {
+    name = 'Lua Crescente'; emoji = '🌒'; color = '#6b7280';
+    desc = 'Marés moderadas, pesca diurna favorecida';
+    tideType = 'Moderada';
+  } else if (phase < 9.22) {
+    name = 'Quarto Crescente'; emoji = '🌓'; color = '#9ca3af';
+    desc = 'Marés de quadratura – amplitude reduzida';
+    tideType = 'Quadratura';
+  } else if (phase < 14.77) {
+    name = 'Lua Gibosa Crescente'; emoji = '🌔'; color = '#d1d5db';
+    desc = 'Marés aumentando, boa atividade de peixes';
+    tideType = 'Crescente';
+  } else if (phase < 16.61) {
+    name = 'Lua Cheia'; emoji = '🌕'; color = '#fbbf24';
+    desc = 'Marés de sizígia – amplitude máxima. Ótimo para pesca noturna';
+    tideType = 'Sizígia';
+  } else if (phase < 22.15) {
+    name = 'Lua Gibosa Minguante'; emoji = '🌖'; color = '#d1d5db';
+    desc = 'Marés diminuindo, boa pesca ao amanhecer';
+    tideType = 'Minguante';
+  } else if (phase < 23.99) {
+    name = 'Quarto Minguante'; emoji = '🌗'; color = '#9ca3af';
+    desc = 'Marés de quadratura – amplitude reduzida';
+    tideType = 'Quadratura';
+  } else if (phase < 29.0) {
+    name = 'Lua Minguante'; emoji = '🌘'; color = '#6b7280';
+    desc = 'Últimos dias do ciclo, marés moderadas';
+    tideType = 'Moderada';
+  } else {
+    name = 'Lua Nova'; emoji = '🌑'; color = '#374151';
+    desc = 'Marés vivas – excelente para pesca no mangue';
+    tideType = 'Sizígia';
+  }
+
+  return { name, emoji, color, desc, tideType, illumination, phase };
+}
+
+function renderMoon(containerId, size = 80) {
+  const info = getMoonInfo();
+  const el = document.getElementById(containerId);
+  if (!el) return;
+
+  const phase = info.phase;
+  const cycle = 29.53058867;
+  const angle = (phase / cycle) * Math.PI * 2;
+
+  // Determine if waxing or waning
+  const isWaxing = phase < cycle / 2;
+  const normalized = isWaxing ? phase / (cycle / 2) : (phase - cycle / 2) / (cycle / 2);
+
+  // Moon SVG
+  const r = size / 2;
+  let svg;
+  if (info.emoji === '🌕') {
+    svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      <circle cx="${r}" cy="${r}" r="${r-2}" fill="#fef3c7" opacity="0.95"/>
+      <circle cx="${r}" cy="${r}" r="${r-2}" fill="none" stroke="#fbbf24" stroke-width="1" opacity="0.5"/>
+      <filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    </svg>`;
+  } else if (info.emoji === '🌑') {
+    svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      <circle cx="${r}" cy="${r}" r="${r-2}" fill="#1f2937"/>
+      <circle cx="${r}" cy="${r}" r="${r-2}" fill="none" stroke="#374151" stroke-width="1.5"/>
+    </svg>`;
+  } else {
+    // Crescent/quarter
+    const litColor = '#fef3c7';
+    const darkColor = '#1a2744';
+    svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      <defs>
+        <clipPath id="moonClip${containerId}"><circle cx="${r}" cy="${r}" r="${r-2}"/></clipPath>
+      </defs>
+      <circle cx="${r}" cy="${r}" r="${r-2}" fill="${isWaxing ? darkColor : litColor}"/>
+      <ellipse cx="${r}" cy="${r}" rx="${Math.abs(Math.cos(angle)) * (r-2)}" ry="${r-2}"
+        fill="${isWaxing ? litColor : darkColor}"
+        clip-path="url(#moonClip${containerId})"/>
+    </svg>`;
+  }
+
+  el.innerHTML = svg;
+  el.style.background = 'transparent';
+}
+
+function renderMoonPhases() {
+  const phases = [
+    { name: 'Nova', emoji: '🌑', day: 0 },
+    { name: 'Crescente', emoji: '🌒', day: 7 },
+    { name: 'Q. Cresc.', emoji: '🌓', day: 7 },
+    { name: 'Gibosa', emoji: '🌔', day: 10 },
+    { name: 'Cheia', emoji: '🌕', day: 15 },
+    { name: 'Minguante', emoji: '🌖', day: 19 },
+    { name: 'Q. Ming.', emoji: '🌗', day: 22 },
+    { name: 'Balsâmica', emoji: '🌘', day: 26 },
+  ];
+
+  const current = getMoonInfo();
+  const currentEmoji = current.emoji;
+
+  const container = document.getElementById('moonPhasesRow');
+  if (!container) return;
+
+  container.innerHTML = phases.map(p => `
+    <div class="moon-phase-mini ${p.emoji === currentEmoji ? 'current' : ''}">
+      <span class="mp-symbol">${p.emoji}</span>
+      <span class="mp-name">${p.name}</span>
+    </div>
+  `).join('');
+}
+
+function renderNextPhases() {
+  const container = document.getElementById('nextPhasesContainer');
+  if (!container) return;
+
+  const now = new Date();
+  const phase = getMoonPhase(now);
+  const cycle = 29.53058867;
+
+  const phases = [
+    { offset: 0, name: 'Lua Nova', emoji: '🌑' },
+    { offset: 7.38, name: 'Quarto Crescente', emoji: '🌓' },
+    { offset: 14.77, name: 'Lua Cheia', emoji: '🌕' },
+    { offset: 22.15, name: 'Quarto Minguante', emoji: '🌗' },
+  ];
+
+  const upcoming = phases.map(p => {
+    let daysUntil = ((p.offset - phase + cycle) % cycle);
+    if (daysUntil < 0.5) daysUntil += cycle;
+    const targetDate = new Date(now.getTime() + daysUntil * 86400000);
+    return { ...p, daysUntil: Math.round(daysUntil), date: targetDate };
+  }).sort((a, b) => a.daysUntil - b.daysUntil);
+
+  container.innerHTML = upcoming.map(p => `
+    <div class="defeso-species-item" style="margin-bottom:6px">
+      <span>${p.emoji} ${p.name}</span>
+      <div style="text-align:right">
+        <span style="font-size:12px;color:var(--text-muted)">${p.date.toLocaleDateString('pt-BR', {day:'2-digit',month:'short'})}</span><br>
+        <span style="font-size:11px;color:var(--teal-light)">${p.daysUntil === 0 ? 'Hoje' : `em ${p.daysUntil} dias`}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ---- TIDE CALCULATION ----
+// Simplified harmonic model for Baía de Todos os Santos
+// Real values approximated from DHN tidal tables
+function getTidesForDay(date) {
+  const d = date || new Date();
+  const moonPhase = getMoonPhase(d);
+  const cycle = 29.53058867;
+
+  // Base tidal amplitude (BTS is semi-diurnal)
+  const springAmplitude = 2.2; // meters at spring tide
+  const neapAmplitude = 0.9;   // meters at neap tide
+
+  // Tidal factor based on moon phase (1 = spring, 0 = neap)
+  const phaseAngle = (moonPhase / cycle) * 2 * Math.PI;
+  const tidalFactor = (1 + Math.cos(2 * phaseAngle)) / 2;
+  const amplitude = neapAmplitude + (springAmplitude - neapAmplitude) * tidalFactor;
+
+  const dayOfYear = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 86400000);
+  const phaseOffset = (moonPhase * 0.84) % 12; // hours offset for semi-diurnal
+
+  const tides = [];
+  const baseHigh = (phaseOffset + 0.5) % 12;
+
+  for (let i = 0; i < 4; i++) {
+    const isHigh = i % 2 === 0;
+    const baseHour = baseHigh + (i * 6.2);
+    const hour = baseHour % 24;
+    const h = Math.floor(hour);
+    const m = Math.floor((hour - h) * 60);
+    const height = isHigh
+      ? (amplitude * 0.9 + Math.random() * amplitude * 0.2).toFixed(1)
+      : (amplitude * 0.15 + Math.random() * amplitude * 0.1).toFixed(1);
+
+    tides.push({
+      time: `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`,
+      height: parseFloat(height),
+      isHigh,
+      label: isHigh ? 'Preamar' : 'Baixa-mar',
+      icon: isHigh ? '🔼' : '🔽'
+    });
+  }
+
+  return tides.sort((a, b) => {
+    const ta = parseInt(a.time.replace(':',''));
+    const tb = parseInt(b.time.replace(':',''));
+    return ta - tb;
+  });
+}
+
+function renderTideGrid() {
+  const tides = getTidesForDay();
+  const grid = document.getElementById('tideGrid');
+  if (!grid) return;
+
+  grid.innerHTML = tides.map(t => `
+    <div class="tide-item">
+      <div class="tide-icon">${t.icon}</div>
+      <div class="tide-details">
+        <span>${t.label}</span>
+        <strong>${t.time}</strong>
+        <em>${t.height}m</em>
+      </div>
+    </div>
+  `).join('');
+
+  // Current tide level bar
+  const now = new Date();
+  const nowMins = now.getHours() * 60 + now.getMinutes();
+  const tidesInMins = tides.map(t => {
+    const [h, m] = t.time.split(':').map(Number);
+    return { ...t, mins: h * 60 + m };
+  });
+
+  let pct = 50;
+  let label = 'Maré estável';
+  for (let i = 0; i < tidesInMins.length - 1; i++) {
+    const t1 = tidesInMins[i], t2 = tidesInMins[i+1];
+    if (nowMins >= t1.mins && nowMins <= t2.mins) {
+      const progress = (nowMins - t1.mins) / (t2.mins - t1.mins);
+      const h1 = t1.height, h2 = t2.height;
+      const maxH = Math.max(...tides.map(t => t.height));
+      const minH = Math.min(...tides.map(t => t.height));
+      const curH = h1 + (h2 - h1) * progress;
+      pct = Math.round((curH - minH) / (maxH - minH) * 100);
+      label = t2.isHigh ? '⬆ Maré subindo' : '⬇ Maré descendo';
+      break;
+    }
+  }
+
+  const fill = document.getElementById('tideBarFill');
+  const indicator = document.getElementById('tideIndicator');
+  const nowLabel = document.getElementById('tideNowLabel');
+  if (fill) fill.style.width = `${pct}%`;
+  if (indicator) indicator.style.left = `${pct}%`;
+  if (nowLabel) nowLabel.textContent = label;
+
+  // Home quick tide
+  const homeTide = document.getElementById('homeTide');
+  if (homeTide) {
+    const nextTide = tides.find(t => {
+      const [h, m] = t.time.split(':').map(Number);
+      return (h * 60 + m) > nowMins;
+    });
+    if (nextTide) {
+      homeTide.textContent = nextTide.isHigh ? '↑ ' + nextTide.time : '↓ ' + nextTide.time;
+    }
+  }
+
+  // Quick tide list on home
+  const quickList = document.getElementById('quickTideList');
+  if (quickList) {
+    quickList.innerHTML = `<div class="tide-grid">${tides.slice(0, 4).map(t => `
+      <div class="tide-item">
+        <div class="tide-icon">${t.icon}</div>
+        <div class="tide-details">
+          <span>${t.label}</span>
+          <strong>${t.time}</strong>
+          <em>${t.height}m</em>
+        </div>
+      </div>`).join('')}</div>`;
+  }
+}
+
+function renderWeekTides() {
+  const container = document.getElementById('weekTideContainer');
+  if (!container) return;
+
+  const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  let html = '';
+  for (let i = 0; i < 5; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    const tides = getTidesForDay(d);
+    const label = i === 0 ? 'Hoje' : i === 1 ? 'Amanhã' : days[d.getDay()];
+    const highs = tides.filter(t => t.isHigh).map(t => `${t.time} (${t.height}m)`).join(' · ');
+    const lows = tides.filter(t => !t.isHigh).map(t => `${t.time} (${t.height}m)`).join(' · ');
+    html += `
+      <div class="defeso-species-item" style="flex-direction:column;align-items:flex-start;gap:4px;margin-bottom:6px">
+        <div style="display:flex;justify-content:space-between;width:100%">
+          <strong>${label} – ${d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}</strong>
+          <span style="font-size:11px;color:var(--teal-light)">${getMoonInfo(d).emoji}</span>
+        </div>
+        <span style="font-size:11px;color:var(--moon-glow)">🔼 Alta: ${highs}</span>
+        <span style="font-size:11px;color:var(--text-muted)">🔽 Baixa: ${lows}</span>
+      </div>`;
+  }
+  container.innerHTML = html;
+}
+
+// ---- WEATHER (cached / simulated for offline) ----
+const weatherConditions = [
+  { desc: 'Ensolarado', icon: '☀️', temp: 30, humidity: 70 },
+  { desc: 'Parcialmente nublado', icon: '⛅', temp: 28, humidity: 78 },
+  { desc: 'Nublado', icon: '☁️', temp: 26, humidity: 82 },
+  { desc: 'Chuva fraca', icon: '🌦️', temp: 25, humidity: 90 },
+  { desc: 'Trovoada', icon: '⛈️', temp: 24, humidity: 95 },
+];
+
+const forecastDays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+
+// ---- WEATHER (Real API: Open-Meteo) ----
+async function fetchWeatherData() {
+  const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=auto`;
+  const marineUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${LAT}&longitude=${LON}&current=wave_height,wave_period&timezone=auto`;
+
+  try {
+    const [wRes, mRes] = await Promise.all([fetch(weatherUrl), fetch(marineUrl)]);
+    const wData = await wRes.json();
+    const mData = await mRes.json();
+
+    const weatherCodeMap = {
+      0: { desc: 'Céu limpo', icon: '☀️' },
+      1: { desc: 'Principalmente limpo', icon: '🌤️' },
+      2: { desc: 'Parcialmente nublado', icon: '⛅' },
+      3: { desc: 'Nublado', icon: '☁️' },
+      45: { desc: 'Nevoeiro', icon: '🌫️' },
+      48: { desc: 'Nevoeiro geada', icon: '🌫️' },
+      51: { desc: 'Drizzle leve', icon: '🌦️' },
+      61: { desc: 'Chuva leve', icon: '🌦️' },
+      63: { desc: 'Chuva moderada', icon: '🌧️' },
+      80: { desc: 'Pancadas de chuva', icon: '🌦️' },
+      95: { desc: 'Trovoada', icon: '⛈️' },
+    };
+
+    const current = wData.current;
+    const daily = wData.daily;
+    const cond = weatherCodeMap[current.weather_code] || { desc: 'Instável', icon: '⛅' };
+
+    const weather = {
+      temp: Math.round(current.temperature_2m),
+      desc: cond.desc,
+      icon: cond.icon,
+      humidity: current.relative_humidity_2m,
+      wind: `${Math.round(current.wind_speed_10m)} km/h ${getWindDir(current.wind_direction_10m)}`,
+      windSpeed: current.wind_speed_10m,
+      visibility: '10 km', // API standard
+      sea: mData.current.wave_height > 1.5 ? 'Agitado' : mData.current.wave_height > 0.8 ? 'Moderado' : 'Leve',
+      waveHeight: mData.current.wave_height,
+      sunrise: daily.sunrise[0].split('T')[1],
+      sunset: daily.sunset[0].split('T')[1],
+      forecast: daily.time.map((t, i) => ({
+        day: i === 0 ? 'Hoje' : forecastDays[new Date(t + 'T00:00').getDay()],
+        icon: (weatherCodeMap[daily.weather_code[i]] || { icon: '⛅' }).icon,
+        temp: Math.round(daily.temperature_2m_max[i])
+      }))
+    };
+
+    localStorage.setItem('mv_weather', JSON.stringify({ ts: Date.now(), data: weather }));
+    return weather;
+  } catch (err) {
+    console.error('Erro API:', err);
+    return null;
+  }
+}
+
+function getWindDir(deg) {
+  const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+  return dirs[Math.round(deg / 45) % 8];
+}
+
+async function renderWeather() {
+  const cached = localStorage.getItem('mv_weather');
+  let weather = null;
+
+  if (cached) {
+    const parsed = JSON.parse(cached);
+    if (Date.now() - parsed.ts < 1800000) { // 30 min cache
+      weather = parsed.data;
+    }
+  }
+
+  if (!weather && navigator.onLine) {
+    weather = await fetchWeatherData();
+  }
+
+  // Fallback to simulation if still null
+  if (!weather) {
+    const cond = weatherConditions[1];
+    weather = {
+      temp: 28, desc: cond.desc, icon: cond.icon, humidity: 75, wind: '12 km/h NE',
+      windSpeed: 12, visibility: '8 km', sea: 'Leve', waveHeight: 0.5,
+      sunrise: '05:45', sunset: '17:50',
+      forecast: Array.from({length: 5}, (_, i) => ({ day: '---', icon: '⛅', temp: 28 }))
+    };
+  }
+
+  document.getElementById('wTemp').textContent = weather.temp;
+  document.getElementById('wDesc').textContent = weather.desc;
+  document.getElementById('wIcon').textContent = weather.icon;
+  document.getElementById('wHumidity').textContent = weather.humidity + '%';
+  document.getElementById('wWind').textContent = weather.wind;
+  document.getElementById('wVis').textContent = weather.visibility;
+  document.getElementById('wSea').textContent = weather.sea;
+  document.getElementById('wSunrise').textContent = weather.sunrise;
+  document.getElementById('wSunset').textContent = weather.sunset;
+  document.getElementById('homeTemp').textContent = weather.temp + '°C';
+
+  // Forecast
+  const forecastRow = document.getElementById('forecastRow');
+  if (forecastRow && weather.forecast) {
+    forecastRow.innerHTML = weather.forecast.slice(0, 5).map(f => `
+      <div class="forecast-item">
+        <span>${f.day}</span>
+        <span class="fi-icon">${f.icon}</span>
+        <span class="fi-temp">${f.temp}°</span>
+      </div>`).join('');
+  }
+
+  // Weather alerts
+  const alerts = document.getElementById('weatherAlerts');
+  if (alerts) {
+    if (weather.waveHeight > 1.8 || weather.windSpeed > 30) {
+      alerts.innerHTML = `<div class="defeso-alert active"><div class="defeso-icon">⚠️</div><div class="defeso-text"><h4>Alerta Marítimo</h4><p>Mar agitado (${weather.waveHeight}m) e ventos fortes. Navegação perigosa para barcos pequenos.</p></div></div>`;
+    } else if (weather.waveHeight > 1.0 || weather.windSpeed > 20) {
+      alerts.innerHTML = `<div class="defeso-alert upcoming"><div class="defeso-icon">⚡</div><div class="defeso-text"><h4>Atenção</h4><p>Condições moderadas. Ondas de ${weather.waveHeight}m. Recomenda-se cautela.</p></div></div>`;
+    } else {
+      alerts.innerHTML = `<div class="defeso-alert safe"><div class="defeso-icon">✅</div><div class="defeso-text"><h4>Tempo Estável</h4><p>Mar calmo (${weather.waveHeight}m) e vento suave. Ótimas condições de pesca.</p></div></div>`;
+    }
+  }
+
+  // Navigation conditions
+  const navEl = document.getElementById('navConditions');
+  if (navEl) {
+    const isSafe = weather.waveHeight < 1.2 && weather.windSpeed < 25;
+    navEl.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="defeso-species-item">
+          <span>🚤 Barcos pequenos (até 5m)</span>
+          <span class="defeso-tag" style="background:${isSafe?'rgba(22,163,74,0.2)':'rgba(220,38,38,0.2)'};color:${isSafe?'#4ade80':'#f87171'}">${isSafe ? 'OK' : 'RISCO'}</span>
+        </div>
+        <div class="defeso-species-item">
+          <span>🌊 Altura das Ondas</span>
+          <span style="font-size:12px;font-weight:700;color:var(--teal-light)">${weather.waveHeight}m</span>
+        </div>
+        <div class="defeso-species-item">
+          <span>🎿 Segurança</span>
+          <span class="defeso-tag" style="background:rgba(220,38,38,0.2);color:#f87171">COLETE OBRIGATÓRIO</span>
+        </div>
+      </div>`;
+  }
+}
+
+// ---- FISH / CARDUMES ----
+function renderFishZones() {
+  const moonInfo = getMoonInfo();
+  const now = new Date();
+  const hour = now.getHours();
+
+  const isMorning = hour >= 5 && hour <= 9;
+  const isEvening = hour >= 16 && hour <= 19;
+  const isNight = hour >= 20 || hour < 5;
+  const isFullMoon = moonInfo.name === 'Lua Cheia';
+  const isNewMoon = moonInfo.name === 'Lua Nova';
+
+  const zones = [
+    {
+      name: 'Entrada da Baía (BTS Sul)',
+      desc: 'Canal próximo à Ilha de Maré',
+      species: 'Carapeba, Robalo, Xaréu',
+      level: (isMorning || isEvening) ? 'high' : 'medium',
+      levelText: (isMorning || isEvening) ? 'Alta Atividade' : 'Atividade Moderada'
+    },
+    {
+      name: 'Mangue de Salinas',
+      desc: 'Áreas de manguezal costeiro',
+      species: 'Sirizinho, Caranguejo, Robalo',
+      level: (isNewMoon || isFullMoon) ? 'high' : 'medium',
+      levelText: (isNewMoon || isFullMoon) ? 'Alta Atividade' : 'Moderada'
+    },
+    {
+      name: 'Alto Mar BTS Norte',
+      desc: 'Águas abertas em direção a Salvador',
+      species: 'Corvina, Vermelho, Cioba',
+      level: isNight && isFullMoon ? 'high' : isMorning ? 'medium' : 'low',
+      levelText: isNight && isFullMoon ? 'Muito Alta (Lua Cheia!)' : isMorning ? 'Moderada' : 'Baixa'
+    },
+    {
+      name: 'Recifes Rasos – Zona Costeira',
+      desc: 'Pedras e recifes próximos à costa',
+      species: 'Garoupa, Badejo, Peroá',
+      level: isMorning ? 'high' : 'medium',
+      levelText: isMorning ? 'Alta (Madrugada/Manhã)' : 'Moderada'
+    },
+  ];
+
+  const container = document.getElementById('fishZones');
+  if (container) {
+    container.innerHTML = zones.map(z => `
+      <div class="fish-zone">
+        <div class="fish-zone-indicator ${z.level}"></div>
+        <div class="fish-zone-info">
+          <h4>${z.name}</h4>
+          <p>${z.desc}</p>
+          <span class="fish-zone-species">🐟 ${z.species}</span>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);text-align:right;flex-shrink:0">
+          ${z.levelText}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Tip
+  const tipEl = document.getElementById('fishTip');
+  if (tipEl) {
+    const tips = [
+      `Com ${moonInfo.name.toLowerCase()}, as marés são ${moonInfo.tideType.toLowerCase()}s. ${isMorning ? 'Amanhecer é o melhor momento!' : isEvening ? 'Fim de tarde promissor!' : 'Aposte na pesca noturna.'}`,
+      'Mangue de Salinas: prefira entrada/saída da maré para captura de robalo e sirizinho.',
+      'Camarão é mais ativo em marés de sizígia (lua cheia/nova) ao anoitecer.',
+      'Caranguejo: melhores meses são fora do período de defeso (dez–fev).',
+    ];
+    const randomTip = tips[Math.floor(Math.random() * tips.length)];
+    tipEl.querySelector('span:last-child').textContent = randomTip;
+  }
+
+  // Marisqueira info
+  const mariEl = document.getElementById('marisqueiraInfo');
+  if (mariEl) {
+    const tides = getTidesForDay();
+    const lowTide = tides.filter(t => !t.isHigh).sort((a,b) => a.time.localeCompare(b.time));
+    mariEl.innerHTML = `
+      <div style="font-size:13px;line-height:1.7;color:var(--text-muted)">
+        <p><strong style="color:var(--text-primary)">🦀 Melhor horário:</strong> 2h antes e durante a baixa-mar</p>
+        <p><strong style="color:var(--text-primary)">📍 Áreas de coleta:</strong> Mangue de Salinas, Riacho da Guia, Pedra do Siri</p>
+        <p><strong style="color:var(--text-primary)">⏰ Baixa-mar hoje:</strong> ${lowTide.map(t => t.time + ' (' + t.height + 'm)').join(' | ')}</p>
+        <p style="margin-top:8px;font-size:12px;color:var(--coral)">⚠️ Sempre verifique o defeso antes de coletar.</p>
+      </div>`;
+  }
+
+  // Species list
+  const speciesEl = document.getElementById('speciesList');
+  if (speciesEl) {
+    const species = [
+      { name: '🦐 Camarão Sete-Barbas', status: 'open', defeso: 'Nov–Jan' },
+      { name: '🦀 Caranguejo-Uçá', status: 'active', defeso: 'Dez–Fev (andada)' },
+      { name: '🦞 Lagosta Vermelha', status: 'soon', defeso: 'Jan–Apr (BA)' },
+      { name: '🐟 Robalo', status: 'open', defeso: 'Sem defeso estadual' },
+      { name: '🐠 Tainha', status: 'open', defeso: 'Sem defeso local' },
+      { name: '🐚 Ostra Nativa', status: 'open', defeso: 'Verificar localidade' },
+      { name: '🦑 Lula', status: 'open', defeso: 'Sem defeso' },
+      { name: '🐟 Pescada', status: 'open', defeso: 'Sem defeso' },
+    ];
+    speciesEl.innerHTML = species.map(s => `
+      <div class="defeso-species-item">
+        <span>${s.name}</span>
+        <div style="text-align:right">
+          <span class="defeso-tag ${s.status === 'active' ? 'tag-active' : s.status === 'open' ? 'tag-open' : 'tag-soon'}">
+            ${s.status === 'active' ? 'DEFESO' : s.status === 'open' ? 'LIBERADO' : 'EM BREVE'}
+          </span>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:2px">${s.defeso}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+}
+
+// ---- DEFESOS ----
+function renderDefesos() {
+  const now = new Date();
+  const month = now.getMonth() + 1; // 1-12
+
+  // Defeso do caranguejo (andada) - Dec to Feb in BA
+  const caranguejoDefeso = month === 12 || month === 1 || month === 2;
+  // Camarão defeso Nov-Jan
+  const camaraoDefeso = month === 11 || month === 12 || month === 1;
+  // Lagosta Jan-Apr (BA)
+  const lagostDefeso = month >= 1 && month <= 4;
+
+  const defesos = document.getElementById('defesosContainer');
+  if (defesos) {
+    defesos.innerHTML = `
+      <div class="defeso-alert ${caranguejoDefeso ? 'active' : 'safe'}">
+        <div class="defeso-icon">${caranguejoDefeso ? '🚫' : '✅'}</div>
+        <div class="defeso-text">
+          <h4>Caranguejo-Uçá</h4>
+          <p>${caranguejoDefeso
+            ? '<strong>DEFESO ATIVO</strong> – Período da andada. Proibido capturar, transportar e comercializar. Multa de R$700 a R$100.000.'
+            : 'Liberado. Respeite tamanho mínimo (6cm de largura de carapaça).'
+          }</p>
+        </div>
+      </div>
+      <div class="defeso-alert ${camaraoDefeso ? 'active' : 'safe'}">
+        <div class="defeso-icon">${camaraoDefeso ? '🚫' : '✅'}</div>
+        <div class="defeso-text">
+          <h4>Camarão Sete-Barbas</h4>
+          <p>${camaraoDefeso
+            ? '<strong>DEFESO ATIVO</strong> – Nov a Jan. Seguro-desemprego disponível para pescadores cadastrados.'
+            : 'Liberado. Rede de espera autorizada com malha mínima de 25mm.'
+          }</p>
+        </div>
+      </div>
+      <div class="defeso-alert ${lagostDefeso ? 'active' : 'safe'}">
+        <div class="defeso-icon">${lagostDefeso ? '🚫' : '✅'}</div>
+        <div class="defeso-text">
+          <h4>Lagosta Vermelha / Verde</h4>
+          <p>${lagostDefeso
+            ? '<strong>DEFESO ATIVO</strong> – Jan a Abr (BA). Proibida captura, transporte e venda.'
+            : 'Fora do defeso. Mínimo: 13cm de comprimento da cauda (processada).'
+          }</p>
+        </div>
+      </div>`;
+  }
+
+  // Home defeso alert
+  const homeDefeso = document.getElementById('homeDefesoAlert');
+  if (homeDefeso) {
+    const anyActive = caranguejoDefeso || camaraoDefeso || lagostDefeso;
+    if (anyActive) {
+      const names = [];
+      if (caranguejoDefeso) names.push('Caranguejo');
+      if (camaraoDefeso) names.push('Camarão');
+      if (lagostDefeso) names.push('Lagosta');
+      homeDefeso.innerHTML = `
+        <div class="defeso-alert active">
+          <div class="defeso-icon">🚫</div>
+          <div class="defeso-text">
+            <h4>Defeso Ativo!</h4>
+            <p><strong>${names.join(', ')}</strong> em período de defeso. Verifique as regras na aba Pesca.</p>
+          </div>
+        </div>`;
+    } else {
+      homeDefeso.innerHTML = `
+        <div class="defeso-alert safe">
+          <div class="defeso-icon">✅</div>
+          <div class="defeso-text">
+            <h4>Sem Defesos Ativos</h4>
+            <p>Pesca liberada. Respeite os tamanhos mínimos de captura.</p>
+          </div>
+        </div>`;
+    }
+  }
+}
+
+// ---- NOTES ----
+let selectedCat = 'pesca';
+
+function selectCat(btn) {
+  document.querySelectorAll('.note-tag-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedCat = btn.dataset.cat;
+}
+
+function saveNote() {
+  const text = document.getElementById('noteText').value.trim();
+  if (!text) { showSnackbar('✏️ Escreva algo antes de salvar!'); return; }
+
+  const notes = getNotes();
+  const now = new Date();
+  const note = {
+    id: Date.now(),
+    text,
+    cat: selectedCat,
+    date: now.toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit',year:'2-digit'}),
+    time: now.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'}),
+    moon: getMoonInfo().emoji,
+    tide: document.getElementById('homeTide')?.textContent || '--',
+  };
+  notes.unshift(note);
+  localStorage.setItem('mv_notes', JSON.stringify(notes));
+  document.getElementById('noteText').value = '';
+  renderNotes();
+  showSnackbar('✅ Anotação salva!');
+}
+
+function getNotes() {
+  try {
+    return JSON.parse(localStorage.getItem('mv_notes') || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function deleteNote(id) {
+  const notes = getNotes().filter(n => n.id !== id);
+  localStorage.setItem('mv_notes', JSON.stringify(notes));
+  renderNotes();
+  showSnackbar('🗑️ Anotação removida');
+}
+
+function renderNotes() {
+  const notes = getNotes();
+  const list = document.getElementById('notesList');
+  const count = document.getElementById('notesCount');
+  if (count) count.textContent = notes.length;
+  if (!list) return;
+
+  if (notes.length === 0) {
+    list.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text-muted);font-size:13px;">
+      <div style="font-size:36px;margin-bottom:8px;">📓</div>
+      Suas anotações aparecerão aqui.<br>Salvas no dispositivo, funcionam sem internet.
+    </div>`;
+    return;
+  }
+
+  const catLabels = {
+    pesca: { label: 'Pesca', cls: 'cat-pesca' },
+    marisqueira: { label: 'Marisco', cls: 'cat-marisqueira' },
+    tempo: { label: 'Tempo', cls: 'cat-tempo' },
+    geral: { label: 'Geral', cls: 'cat-geral' },
+  };
+
+  list.innerHTML = notes.map(n => {
+    const cat = catLabels[n.cat] || catLabels.geral;
+    return `
+      <div class="note-item">
+        <div class="note-header">
+          <span class="note-category ${cat.cls}">${cat.label}</span>
+          <span class="note-date">${n.moon} ${n.date} ${n.time}</span>
+        </div>
+        <p class="note-content">${n.text.replace(/\n/g, '<br>')}</p>
+        <div style="margin-top:8px;font-size:10px;color:var(--text-muted)">🌊 Maré: ${n.tide}</div>
+        <button class="note-delete" onclick="deleteNote(${n.id})">✕</button>
+      </div>
+    `;
+  }).join('');
+}
+
+// ---- SNACKBAR ----
+function showSnackbar(msg) {
+  const sb = document.getElementById('snackbar');
+  sb.textContent = msg;
+  sb.classList.add('show');
+  setTimeout(() => sb.classList.remove('show'), 2500);
+}
+
+// ---- ACCORDION ----
+function toggleAccordion(header) {
+  const item = header.parentElement;
+  item.classList.toggle('open');
+}
+
+// ---- PWA INSTALL ----
+let deferredPrompt = null;
+const installBanner = document.getElementById('installBanner');
+const installBtn = document.getElementById('installBtn');
+
+// Detect if it's iOS
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+function initInstallLogic() {
+  if (isStandalone) {
+    installBanner?.classList.add('hidden');
+    return;
+  }
+
+  if (isIOS) {
+    // Show banner for iOS too, but change text
+    if (installBanner) {
+      installBanner.classList.remove('hidden');
+      installBtn.textContent = 'Ver como';
+      const installP = installBanner.querySelector('p');
+      if (installP) installP.textContent = 'Instale no seu iPhone/iPad';
+    }
+  }
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (!isStandalone) {
+    installBanner?.classList.remove('hidden');
+  }
+});
+
+installBtn?.addEventListener('click', async () => {
+  if (isIOS) {
+    showIOSInstructions();
+    return;
+  }
+
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      installBanner?.classList.add('hidden');
+      showSnackbar('✅ App instalado com sucesso!');
+    }
+    deferredPrompt = null;
+  } else {
+    // Fallback if browser supports but prompt not available yet
+    showSnackbar('Aguardando prompt de instalação...');
+  }
+});
+
+function showIOSInstructions() {
+  const modal = document.createElement('div');
+  modal.className = 'ios-modal show';
+  modal.innerHTML = `
+    <div class="ios-content">
+      <button class="ios-close" onclick="this.parentElement.parentElement.remove()">✕</button>
+      <h3>Instalar no iOS</h3>
+      <div class="ios-step">
+        <div class="ios-step-num">1</div>
+        <p>Toque no botão de <strong>Compartilhar</strong> <span class="ios-icon-share">⎋</span> na barra do navegador.</p>
+      </div>
+      <div class="ios-step">
+        <div class="ios-step-num">2</div>
+        <p>Role para baixo e selecione <strong>Adicionar à Tela de Início</strong>.</p>
+      </div>
+      <div class="ios-step">
+        <div class="ios-step-num">3</div>
+        <p>Toque em <strong>Adicionar</strong> no canto superior direito.</p>
+      </div>
+      <button class="save-note-btn" style="margin-top:10px" onclick="this.parentElement.parentElement.remove()">ENTENDI</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+window.addEventListener('appinstalled', () => {
+  installBanner?.classList.add('hidden');
+  deferredPrompt = null;
+  showSnackbar('🎉 Maré Viva instalado!');
+});
+
+initInstallLogic();
+
+// ---- MOON HOME VISUAL ----
+function renderHomeMoon() {
+  const info = getMoonInfo();
+  document.getElementById('heroMoon').textContent = info.emoji;
+  document.getElementById('moonNameHome').textContent = info.name;
+  document.getElementById('moonDescHome').textContent = info.desc;
+  document.getElementById('moonIllum').textContent = info.illumination + '%';
+  document.getElementById('moonNameMare').textContent = info.name;
+  document.getElementById('moonDescMare').textContent = info.desc;
+
+  // Moonrise (approximate for BA)
+  const hour = 17 + Math.floor(getMoonInfo().phase / 3.7) % 12;
+  document.getElementById('moonrise').textContent = `${String(hour).padStart(2,'0')}:${String(Math.floor(Math.random()*60)).padStart(2,'0')}`;
+
+  // Fish home indicator
+  // Dynamic Greeting
+  const hr = new Date().getHours();
+  let greet = "Bom dia";
+  if (hr >= 12 && hr < 18) greet = "Boa tarde";
+  else if (hr >= 18 || hr < 5) greet = "Boa noite";
+  
+  const heroH1 = document.querySelector('.hero-text h1');
+  if (heroH1) heroH1.textContent = `${greet}, povo do mar! ${hr >= 18 || hr < 5 ? '🌙' : hr >= 12 ? '🌤️' : '☀️'}`;
+
+  renderMoon('moonVisualHome', 80);
+  renderMoon('moonVisualMare', 80);
+}
+
+// ---- INIT ----
+function init() {
+  renderHomeMoon();
+  renderMoonPhases();
+  renderNextPhases();
+  renderTideGrid();
+  renderWeekTides();
+  renderWeather();
+  renderFishZones();
+  renderDefesos();
+  renderNotes();
+}
+
+init();
+
+// ---- SERVICE WORKER REGISTRATION ----
+// Só registra SW quando rodando em servidor real (não em preview/iframe)
+if ('serviceWorker' in navigator && location.protocol === 'https:' && !location.hostname.includes('claudeusercontent')) {
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    console.log('SW registrado:', reg.scope);
+  }).catch(err => {
+    console.log('SW erro (não crítico):', err);
+  });
+}
+
+// ---- ADMIN LOGIC ----
+let adminPressTimer;
+const logoElement = document.querySelector('.app-logo');
+
+if (logoElement) {
+  ['mousedown', 'touchstart'].forEach(evt => {
+    logoElement.addEventListener(evt, () => {
+      adminPressTimer = setTimeout(() => { navigateTo('admin'); }, 3000);
+    });
+  });
+  ['mouseup', 'touchend', 'mouseleave'].forEach(evt => {
+    logoElement.addEventListener(evt, () => { clearTimeout(adminPressTimer); });
+  });
+}
+
+async function checkAdminAuth() {
+  const pinInput = document.getElementById('adminPin').value;
+  const btn = document.querySelector('#admin-auth button');
+  btn.disabled = true;
+  btn.textContent = '⌛ VALIDANDO...';
+
+  try {
+    // Busca o PIN no Firestore (Coleção 'settings', documento 'admin')
+    const doc = await db.collection('settings').doc('admin').get();
+    const correctPin = doc.exists ? doc.data().pin : '2024'; // Fallback se não existir
+
+    if (pinInput === correctPin) {
+      document.getElementById('admin-auth').style.display = 'none';
+      document.getElementById('admin-panel').style.display = 'flex';
+      renderAdminSponsors();
+    } else {
+      showSnackbar('❌ PIN Incorreto!');
+    }
+  } catch (e) {
+    // Se der erro de conexão ou permissão, usa o PIN padrão
+    if (pinInput === '2024') {
+      document.getElementById('admin-auth').style.display = 'none';
+      document.getElementById('admin-panel').style.display = 'flex';
+      renderAdminSponsors();
+    } else {
+      showSnackbar('❌ Erro na validação!');
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'ENTRAR NO PAINEL';
+  }
+}
+
+function logoutAdmin() {
+  document.getElementById('adminPin').value = '';
+  document.getElementById('admin-auth').style.display = 'flex';
+  document.getElementById('admin-panel').style.display = 'none';
+  navigateTo('home');
+}
+
+// ---- SPONSORS FIRESTORE LOGIC ----
+let currentSponsors = [];
+
+function listenSponsors() {
+  db.collection('sponsors').onSnapshot((snapshot) => {
+    currentSponsors = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    renderSponsorCarousel();
+    renderSponsoredTip();
+    if (currentScreen === 'admin') renderAdminSponsors();
+  });
+}
+
+function renderSponsorCarousel() {
+  const container = document.getElementById('sponsorCarousel');
+  if (!container) return;
+
+  if (currentSponsors.length === 0) {
+    container.style.display = 'none';
+    container.innerHTML = '';
+    return;
+  }
+
+  container.style.display = 'block';
+  let idx = 0;
+  const updateBanner = () => {
+    const s = currentSponsors[idx];
+    if (!s) return;
+    container.innerHTML = `
+      <div class="card fade-in" style="background:linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.1)); border: 1px solid var(--glass-border); cursor:pointer; padding: 14px 16px; display: flex; align-items: center; gap: 15px; position: relative; overflow: hidden;" onclick="safeOpen('${s.link}', '${s.nome}')">
+        <div style="flex: 1; padding-bottom: 5px;">
+          <h4 style="color:var(--teal-light); font-size: 15px; font-weight: 800;">${s.nome}</h4>
+          <p style="color:var(--text-primary); font-size: 13px; margin-top: 2px; line-height: 1.2">${s.frase}</p>
+          <p style="color:var(--text-muted); font-size: 10px; margin-top: 4px; display: flex; align-items: center; gap: 4px;">📍 ${s.address || 'Salinas da Margarida'}</p>
+        </div>
+        <div style="text-align: right; min-width: 100px;">
+          <div style="font-size:9px; color: #25D366; font-weight: 800; margin-bottom: 2px; letter-spacing: 0.5px;">📞 CONTATO</div>
+          <div style="font-size:16px; color: #ffffff; font-weight: 800; font-family: "Syne", sans-serif; white-space: nowrap;">${s.phone || "(Zap)"}</div>
+        </div>
+        <div style="position: absolute; bottom: 0; right: 0; background: var(--teal); color: white; font-size: 8px; font-weight: 900; padding: 2px 8px; border-top-left-radius: 8px; letter-spacing: 1px;">PATROCÍNIO</div>
+      </div>
+    `;
+    idx = (idx + 1) % currentSponsors.length;
+  };
+  
+  if (window.sponsorInterval) clearInterval(window.sponsorInterval);
+  updateBanner();
+  window.sponsorInterval = setInterval(updateBanner, 6000);
+}
+
+function renderSponsoredTip() {
+  const tipEl = document.getElementById('fishTip');
+  if (!tipEl || currentSponsors.length === 0) return;
+  
+  // 40% de chance de mostrar patrocinado
+  if (Math.random() < 0.4) {
+    const s = currentSponsors[Math.floor(Math.random() * currentSponsors.length)];
+    const tipSpan = tipEl.querySelector('span:last-child');
+    if (tipSpan) {
+      tipSpan.innerHTML = `<strong>Dica do Parceiro (${s.nome}):</strong> ${s.frase}. <span onclick="safeOpen('${s.link}', '${s.nome}')" style="color:var(--teal-light);cursor:pointer; font-weight: 700; text-decoration: underline;">Saiba mais ➔</span>`;
+      tipEl.style.borderColor = 'var(--teal)';
+      tipEl.style.background = 'rgba(10, 191, 188, 0.15)';
+    }
+  }
+}
+
+async function saveSponsor() {
+  const nome = document.getElementById('sponsorName').value.trim();
+  const frase = document.getElementById('sponsorText').value.trim();
+  const phone = document.getElementById('sponsorPhone').value.trim();
+  const address = document.getElementById('sponsorAddress').value.trim();
+  const link = document.getElementById('sponsorLink').value.trim();
+
+  if (!nome || !frase) { showSnackbar('⚠️ Preencha nome e frase!'); return; }
+
+  const btn = document.getElementById('btnSaveSponsor');
+  btn.disabled = true;
+  btn.textContent = '⌛ SALVANDO...';
+
+  try {
+    await db.collection('sponsors').add({
+      nome, frase, phone, address, link: link || '#',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    showSnackbar('✅ Patrocinador adicionado!');
+    document.getElementById('sponsorName').value = '';
+    document.getElementById('sponsorText').value = '';
+    document.getElementById('sponsorPhone').value = '';
+    document.getElementById('sponsorAddress').value = '';
+    document.getElementById('sponsorLink').value = '';
+  } catch (e) {
+    showSnackbar('❌ Erro ao salvar');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '💾 SALVAR PATROCINADOR';
+  }
+}
+
+function renderAdminSponsors() {
+  const list = document.getElementById('adminSponsorsList');
+  if (!list) return;
+
+  if (currentSponsors.length === 0) {
+    list.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:20px">Nenhum patrocinador cadastrado.</p>';
+    return;
+  }
+
+  list.innerHTML = currentSponsors.map(s => `
+    <div class="defeso-species-item" style="margin-bottom:8px; background: rgba(255,255,255,0.05);">
+      <div style="flex: 1">
+        <strong>${s.nome}</strong><br>
+        <span style="font-size:11px;color:var(--text-muted)">${s.frase}</span>
+      </div>
+      <button onclick="deleteSponsor('${s.id}')" style="background:rgba(220,38,38,0.2);color:#f87171;border:1px solid rgba(220,38,38,0.4);padding:6px 12px;border-radius:8px;font-size:10px;font-weight: 700;cursor:pointer">EXCLUIR</button>
+    </div>
+  `).join('');
+}
+
+async function deleteSponsor(id) {
+  if (confirm('Deseja realmente excluir este patrocinador?')) {
+    try {
+      await db.collection('sponsors').doc(id).delete();
+      showSnackbar('🗑️ Removido!');
+    } catch (e) {
+      showSnackbar('❌ Erro ao remover');
+    }
+  }
+}
+
+// Iniciar escuta do Firestore
+listenSponsors();
+</script>
+</body>
+</html>

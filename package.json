@@ -1,0 +1,26 @@
+{
+  "name": "mare-viva",
+  "version": "1.0.0",
+  "description": "App PWA (Progressive Web App) feito especialmente para a comunidade pesqueira de **Salinas da Margarida, Bahia, Brasil**.",
+  "main": "sw.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zonaeducacional/mareviva.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/zonaeducacional/mareviva/issues"
+  },
+  "homepage": "https://github.com/zonaeducacional/mareviva#readme",
+  "dependencies": {
+    "@capacitor/android": "^8.3.1",
+    "@capacitor/cli": "^8.3.1",
+    "@capacitor/core": "^8.3.1"
+  }
+}
