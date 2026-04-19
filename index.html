@@ -2394,10 +2394,11 @@ function listenSponsors() {
 
 function renderSponsorCarousel() {
   const container = document.getElementById('sponsorCarousel');
-  if (!container || currentSponsors.length === 0) {
+  if (!container) return; if (currentSponsors.length === 0) { container.style.display = 'none';
     if (container) container.innerHTML = '';
     return;
   }
+  container.style.display = 'block';
 
   let idx = 0;
   const updateBanner = () => {
