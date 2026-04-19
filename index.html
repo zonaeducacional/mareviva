@@ -1718,36 +1718,90 @@ const weatherConditions = [
 
 const forecastDays = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
-function renderWeather() {
-  // Use cached data or load fresh
+// ---- WEATHER (Real API: Open-Meteo) ----
+async function fetchWeatherData() {
+  const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=auto`;
+  const marineUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${LAT}&longitude=${LON}&current=wave_height,wave_period&timezone=auto`;
+
+  try {
+    const [wRes, mRes] = await Promise.all([fetch(weatherUrl), fetch(marineUrl)]);
+    const wData = await wRes.json();
+    const mData = await mRes.json();
+
+    const weatherCodeMap = {
+      0: { desc: 'Céu limpo', icon: '☀️' },
+      1: { desc: 'Principalmente limpo', icon: '🌤️' },
+      2: { desc: 'Parcialmente nublado', icon: '⛅' },
+      3: { desc: 'Nublado', icon: '☁️' },
+      45: { desc: 'Nevoeiro', icon: '🌫️' },
+      48: { desc: 'Nevoeiro geada', icon: '🌫️' },
+      51: { desc: 'Drizzle leve', icon: '🌦️' },
+      61: { desc: 'Chuva leve', icon: '🌦️' },
+      63: { desc: 'Chuva moderada', icon: '🌧️' },
+      80: { desc: 'Pancadas de chuva', icon: '🌦️' },
+      95: { desc: 'Trovoada', icon: '⛈️' },
+    };
+
+    const current = wData.current;
+    const daily = wData.daily;
+    const cond = weatherCodeMap[current.weather_code] || { desc: 'Instável', icon: '⛅' };
+
+    const weather = {
+      temp: Math.round(current.temperature_2m),
+      desc: cond.desc,
+      icon: cond.icon,
+      humidity: current.relative_humidity_2m,
+      wind: `${Math.round(current.wind_speed_10m)} km/h ${getWindDir(current.wind_direction_10m)}`,
+      windSpeed: current.wind_speed_10m,
+      visibility: '10 km', // API standard
+      sea: mData.current.wave_height > 1.5 ? 'Agitado' : mData.current.wave_height > 0.8 ? 'Moderado' : 'Leve',
+      waveHeight: mData.current.wave_height,
+      sunrise: daily.sunrise[0].split('T')[1],
+      sunset: daily.sunset[0].split('T')[1],
+      forecast: daily.time.map((t, i) => ({
+        day: i === 0 ? 'Hoje' : forecastDays[new Date(t + 'T00:00').getDay()],
+        icon: (weatherCodeMap[daily.weather_code[i]] || { icon: '⛅' }).icon,
+        temp: Math.round(daily.temperature_2m_max[i])
+      }))
+    };
+
+    localStorage.setItem('mv_weather', JSON.stringify({ ts: Date.now(), data: weather }));
+    return weather;
+  } catch (err) {
+    console.error('Erro API:', err);
+    return null;
+  }
+}
+
+function getWindDir(deg) {
+  const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+  return dirs[Math.round(deg / 45) % 8];
+}
+
+async function renderWeather() {
   const cached = localStorage.getItem('mv_weather');
-  let weather;
+  let weather = null;
 
   if (cached) {
     const parsed = JSON.parse(cached);
-    if (Date.now() - parsed.ts < 3600000) {
+    if (Date.now() - parsed.ts < 1800000) { // 30 min cache
       weather = parsed.data;
     }
   }
 
-  if (!weather) {
-    // Generate realistic weather for Salinas da Margarida in BA
-    const cond = weatherConditions[Math.floor(Math.random() * 3)]; // Usually nice
-    const windDir = ['NE', 'E', 'SE', 'S', 'SW'][Math.floor(Math.random() * 5)];
-    const windSpeed = Math.floor(8 + Math.random() * 14);
-    weather = {
-      temp: cond.temp + Math.floor(Math.random() * 4 - 2),
-      desc: cond.desc,
-      icon: cond.icon,
-      humidity: cond.humidity,
-      wind: `${windSpeed} km/h ${windDir}`,
-      visibility: `${Math.floor(6 + Math.random() * 5)} km`,
-      sea: windSpeed < 15 ? 'Leve' : windSpeed < 22 ? 'Moderado' : 'Agitado',
-      sunrise: '05:' + String(38 + Math.floor(Math.random() * 8)).padStart(2,'0'),
-      sunset: '17:' + String(44 + Math.floor(Math.random() * 8)).padStart(2,'0'),
-    };
+  if (!weather && navigator.onLine) {
+    weather = await fetchWeatherData();
+  }
 
-    localStorage.setItem('mv_weather', JSON.stringify({ ts: Date.now(), data: weather }));
+  // Fallback to simulation if still null
+  if (!weather) {
+    const cond = weatherConditions[1];
+    weather = {
+      temp: 28, desc: cond.desc, icon: cond.icon, humidity: 75, wind: '12 km/h NE',
+      windSpeed: 12, visibility: '8 km', sea: 'Leve', waveHeight: 0.5,
+      sunrise: '05:45', sunset: '17:50',
+      forecast: Array.from({length: 5}, (_, i) => ({ day: '---', icon: '⛅', temp: 28 }))
+    };
   }
 
   document.getElementById('wTemp').textContent = weather.temp;
@@ -1762,53 +1816,45 @@ function renderWeather() {
   document.getElementById('homeTemp').textContent = weather.temp + '°C';
 
   // Forecast
-  const today = new Date().getDay();
   const forecastRow = document.getElementById('forecastRow');
-  if (forecastRow) {
-    forecastRow.innerHTML = Array.from({length: 5}, (_, i) => {
-      const c = weatherConditions[Math.floor(Math.random() * weatherConditions.length)];
-      const t = weather.temp + Math.floor(Math.random() * 6 - 3);
-      const dayIdx = (today + i) % 7;
-      return `
-        <div class="forecast-item">
-          <span>${i === 0 ? 'Hoje' : forecastDays[dayIdx]}</span>
-          <span class="fi-icon">${c.icon}</span>
-          <span class="fi-temp">${t}°</span>
-        </div>`;
-    }).join('');
+  if (forecastRow && weather.forecast) {
+    forecastRow.innerHTML = weather.forecast.slice(0, 5).map(f => `
+      <div class="forecast-item">
+        <span>${f.day}</span>
+        <span class="fi-icon">${f.icon}</span>
+        <span class="fi-temp">${f.temp}°</span>
+      </div>`).join('');
   }
 
   // Weather alerts
   const alerts = document.getElementById('weatherAlerts');
   if (alerts) {
-    const seaState = weather.sea;
-    if (seaState === 'Agitado') {
-      alerts.innerHTML = `<div class="defeso-alert active"><div class="defeso-icon">⚠️</div><div class="defeso-text"><h4>Mar Agitado</h4><p>Evite saídas em embarcações pequenas. Ondas acima de 1,5m na baía.</p></div></div>`;
-    } else if (seaState === 'Moderado') {
-      alerts.innerHTML = `<div class="defeso-alert upcoming"><div class="defeso-icon">⚡</div><div class="defeso-text"><h4>Atenção</h4><p>Mar moderado. Tome cuidado com embarcações menores. Use colete salva-vidas.</p></div></div>`;
+    if (weather.waveHeight > 1.8 || weather.windSpeed > 30) {
+      alerts.innerHTML = `<div class="defeso-alert active"><div class="defeso-icon">⚠️</div><div class="defeso-text"><h4>Alerta Marítimo</h4><p>Mar agitado (${weather.waveHeight}m) e ventos fortes. Navegação perigosa para barcos pequenos.</p></div></div>`;
+    } else if (weather.waveHeight > 1.0 || weather.windSpeed > 20) {
+      alerts.innerHTML = `<div class="defeso-alert upcoming"><div class="defeso-icon">⚡</div><div class="defeso-text"><h4>Atenção</h4><p>Condições moderadas. Ondas de ${weather.waveHeight}m. Recomenda-se cautela.</p></div></div>`;
     } else {
-      alerts.innerHTML = `<div class="defeso-alert safe"><div class="defeso-icon">✅</div><div class="defeso-text"><h4>Condições Favoráveis</h4><p>Mar calmo. Boa condição para navegação e pesca na baía.</p></div></div>`;
+      alerts.innerHTML = `<div class="defeso-alert safe"><div class="defeso-icon">✅</div><div class="defeso-text"><h4>Tempo Estável</h4><p>Mar calmo (${weather.waveHeight}m) e vento suave. Ótimas condições de pesca.</p></div></div>`;
     }
   }
 
   // Navigation conditions
   const navEl = document.getElementById('navConditions');
   if (navEl) {
-    const windN = parseInt(weather.wind);
-    const navColor = windN < 15 ? '#4ade80' : windN < 22 ? '#fbbf24' : '#f87171';
+    const isSafe = weather.waveHeight < 1.2 && weather.windSpeed < 25;
     navEl.innerHTML = `
       <div style="display:flex;flex-direction:column;gap:8px">
         <div class="defeso-species-item">
           <span>🚤 Barcos pequenos (até 5m)</span>
-          <span class="defeso-tag" style="background:${windN<15?'rgba(22,163,74,0.2)':'rgba(220,38,38,0.2)'};color:${windN<15?'#4ade80':'#f87171'}">${windN < 15 ? 'OK' : 'ATENÇÃO'}</span>
+          <span class="defeso-tag" style="background:${isSafe?'rgba(22,163,74,0.2)':'rgba(220,38,38,0.2)'};color:${isSafe?'#4ade80':'#f87171'}">${isSafe ? 'OK' : 'RISCO'}</span>
         </div>
         <div class="defeso-species-item">
-          <span>⛵ Barcos médios (5-10m)</span>
-          <span class="defeso-tag" style="background:rgba(22,163,74,0.2);color:#4ade80">OK</span>
+          <span>🌊 Altura das Ondas</span>
+          <span style="font-size:12px;font-weight:700;color:var(--teal-light)">${weather.waveHeight}m</span>
         </div>
         <div class="defeso-species-item">
-          <span>🎿 Uso de colete salva-vidas</span>
-          <span class="defeso-tag" style="background:rgba(220,38,38,0.2);color:#f87171">OBRIGATÓRIO</span>
+          <span>🎿 Segurança</span>
+          <span class="defeso-tag" style="background:rgba(220,38,38,0.2);color:#f87171">COLETE OBRIGATÓRIO</span>
         </div>
       </div>`;
   }
