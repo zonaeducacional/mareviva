@@ -2423,9 +2423,9 @@ function renderSponsorCarousel() {
           <h4 style="color:var(--teal-light); font-size: 15px; font-weight: 800;">${s.nome}</h4>
           <p style="color:var(--text-primary); font-size: 13px; margin-top: 2px; line-height: 1.2">${s.frase}</p>
         </div>
-        <div style="text-align: right;">
-          <div style="font-size:10px; color: #25D366; font-weight: 800; margin-bottom: 2px;">📞 CONTATO</div>
-          <div style="font-size:14px; color: #ffffff; font-weight: 700; font-family: 'Syne', sans-serif;">${s.phone || 'Ver Zap'}</div>
+        <div style="text-align: right; min-width: 100px;">
+          <div style="font-size:9px; color: #25D366; font-weight: 800; margin-bottom: 2px; letter-spacing: 0.5px;">📞 CONTATO</div>
+          <div style="font-size:16px; color: #ffffff; font-weight: 800; font-family: "Syne", sans-serif; white-space: nowrap;">${s.phone || "(Zap)"}</div>
         </div>
         <div style="position: absolute; bottom: 0; right: 0; background: var(--teal); color: white; font-size: 8px; font-weight: 900; padding: 2px 8px; border-top-left-radius: 8px; letter-spacing: 1px;">PATROCÍNIO</div>
       </div>
