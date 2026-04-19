@@ -41,8 +41,12 @@ body {
   color: var(--text-primary);
   min-height: 100vh;
   overflow-x: hidden;
+  width: 100%;
   position: relative;
+  touch-action: manipulation;
 }
+
+html { overflow-x: hidden; width: 100%; }
 
 /* ANIMATED OCEAN BACKGROUND */
 .ocean-bg {
@@ -2283,9 +2287,14 @@ function renderHomeMoon() {
   document.getElementById('moonrise').textContent = `${String(hour).padStart(2,'0')}:${String(Math.floor(Math.random()*60)).padStart(2,'0')}`;
 
   // Fish home indicator
-  const hour2 = new Date().getHours();
-  const fishGood = (hour2 >= 5 && hour2 <= 9) || (hour2 >= 16 && hour2 <= 20) || info.name.includes('Cheia');
-  document.getElementById('homeFish').textContent = fishGood ? '⭐ Ótima' : 'Boa';
+  // Dynamic Greeting
+  const hr = new Date().getHours();
+  let greet = "Bom dia";
+  if (hr >= 12 && hr < 18) greet = "Boa tarde";
+  else if (hr >= 18 || hr < 5) greet = "Boa noite";
+  
+  const heroH1 = document.querySelector('.hero-text h1');
+  if (heroH1) heroH1.textContent = `${greet}, pescador! ${hr >= 18 || hr < 5 ? '🌙' : hr >= 12 ? '🌤️' : '☀️'}`;
 
   renderMoon('moonVisualHome', 80);
   renderMoon('moonVisualMare', 80);
@@ -2331,14 +2340,36 @@ if (logoElement) {
   });
 }
 
-function checkAdminAuth() {
-  const pin = document.getElementById('adminPin').value;
-  if (pin === '2024') { // PIN PADRÃO
-    document.getElementById('admin-auth').style.display = 'none';
-    document.getElementById('admin-panel').style.display = 'flex';
-    renderAdminSponsors();
-  } else {
-    showSnackbar('❌ PIN Incorreto!');
+async function checkAdminAuth() {
+  const pinInput = document.getElementById('adminPin').value;
+  const btn = document.querySelector('#admin-auth button');
+  btn.disabled = true;
+  btn.textContent = '⌛ VALIDANDO...';
+
+  try {
+    // Busca o PIN no Firestore (Coleção 'settings', documento 'admin')
+    const doc = await db.collection('settings').doc('admin').get();
+    const correctPin = doc.exists ? doc.data().pin : '2024'; // Fallback se não existir
+
+    if (pinInput === correctPin) {
+      document.getElementById('admin-auth').style.display = 'none';
+      document.getElementById('admin-panel').style.display = 'flex';
+      renderAdminSponsors();
+    } else {
+      showSnackbar('❌ PIN Incorreto!');
+    }
+  } catch (e) {
+    // Se der erro de conexão ou permissão, usa o PIN padrão
+    if (pinInput === '2024') {
+      document.getElementById('admin-auth').style.display = 'none';
+      document.getElementById('admin-panel').style.display = 'flex';
+      renderAdminSponsors();
+    } else {
+      showSnackbar('❌ Erro na validação!');
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'ENTRAR NO PAINEL';
   }
 }
 
