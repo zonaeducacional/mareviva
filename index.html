@@ -1323,7 +1323,8 @@ html { overflow-x: hidden; width: 100%; }
             <input type="text" id="sponsorName" placeholder="Nome do Estabelecimento" style="background:transparent;border:none;border-bottom:1px solid var(--glass-border);color:white;padding:8px;font-family:inherit">
             <input type="text" id="sponsorPhone" placeholder="Telefone (Ex: 75 9999-9999)" style="background:transparent;border:none;border-bottom:1px solid var(--glass-border);color:white;padding:8px;font-family:inherit">
             <input type="text" id="sponsorText" placeholder="Frase de efeito (Ex: Gelo e Iscas 24h)" style="background:transparent;border:none;border-bottom:1px solid var(--glass-border);color:white;padding:8px;font-family:inherit">
-            <input type="text" id="sponsorLink" placeholder="Link do WhatsApp (https://wa.me/...)" style="background:transparent;border:none;border-bottom:1px solid var(--glass-border);color:white;padding:8px;font-family:inherit">
+            <input type="text" id="sponsorAddress" placeholder="Endereço (Ex: Praça Central, Salinas)" style="background:transparent;border:none;border-bottom:1px solid var(--glass-border);color:white;padding:8px;font-family:inherit">
+            <input type="text" id="sponsorLink" placeholder="Link do Anunciante (Site, Insta ou Zap)" style="background:transparent;border:none;border-bottom:1px solid var(--glass-border);color:white;padding:8px;font-family:inherit">
             <button class="save-note-btn" id="btnSaveSponsor" onclick="saveSponsor()">💾 SALVAR PATROCINADOR</button>
           </div>
 
@@ -2418,10 +2419,11 @@ function renderSponsorCarousel() {
     const s = currentSponsors[idx];
     if (!s) return;
     container.innerHTML = `
-      <div class="card fade-in" style="background:linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.1)); border: 1px solid var(--glass-border); cursor:pointer; padding: 16px; display: flex; align-items: center; gap: 15px; position: relative; overflow: hidden;" onclick="safeOpen('${s.link}')">
+      <div class="card fade-in" style="background:linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.1)); border: 1px solid var(--glass-border); cursor:pointer; padding: 14px 16px; display: flex; align-items: center; gap: 15px; position: relative; overflow: hidden;" onclick="safeOpen('${s.link}')">
         <div style="flex: 1; padding-bottom: 5px;">
           <h4 style="color:var(--teal-light); font-size: 15px; font-weight: 800;">${s.nome}</h4>
           <p style="color:var(--text-primary); font-size: 13px; margin-top: 2px; line-height: 1.2">${s.frase}</p>
+          <p style="color:var(--text-muted); font-size: 10px; margin-top: 4px; display: flex; align-items: center; gap: 4px;">📍 ${s.address || 'Salinas da Margarida'}</p>
         </div>
         <div style="text-align: right; min-width: 100px;">
           <div style="font-size:9px; color: #25D366; font-weight: 800; margin-bottom: 2px; letter-spacing: 0.5px;">📞 CONTATO</div>
@@ -2458,6 +2460,7 @@ async function saveSponsor() {
   const nome = document.getElementById('sponsorName').value.trim();
   const frase = document.getElementById('sponsorText').value.trim();
   const phone = document.getElementById('sponsorPhone').value.trim();
+  const address = document.getElementById('sponsorAddress').value.trim();
   const link = document.getElementById('sponsorLink').value.trim();
 
   if (!nome || !frase) { showSnackbar('⚠️ Preencha nome e frase!'); return; }
@@ -2468,13 +2471,14 @@ async function saveSponsor() {
 
   try {
     await db.collection('sponsors').add({
-      nome, frase, phone: phone || '', link: link || '#',
+      nome, frase, phone, address, link: link || '#',
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     showSnackbar('✅ Patrocinador adicionado!');
     document.getElementById('sponsorName').value = '';
     document.getElementById('sponsorText').value = '';
     document.getElementById('sponsorPhone').value = '';
+    document.getElementById('sponsorAddress').value = '';
     document.getElementById('sponsorLink').value = '';
   } catch (e) {
     showSnackbar('❌ Erro ao salvar');
