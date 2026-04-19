@@ -962,7 +962,7 @@ html { overflow-x: hidden; width: 100%; }
 
       <div class="home-hero fade-in">
         <div class="hero-text">
-          <h1>Bom dia, pescador! 🌊</h1>
+          <h1>Bom dia, povo do mar! 🌊</h1>
           <p>Condições da Baía de Todos os Santos para hoje</p>
         </div>
         <div class="hero-moon" id="heroMoon">🌕</div>
@@ -2305,7 +2305,7 @@ function renderHomeMoon() {
   else if (hr >= 18 || hr < 5) greet = "Boa noite";
   
   const heroH1 = document.querySelector('.hero-text h1');
-  if (heroH1) heroH1.textContent = `${greet}, pescador! ${hr >= 18 || hr < 5 ? '🌙' : hr >= 12 ? '🌤️' : '☀️'}`;
+  if (heroH1) heroH1.textContent = `${greet}, povo do mar! ${hr >= 18 || hr < 5 ? '🌙' : hr >= 12 ? '🌤️' : '☀️'}`;
 
   renderMoon('moonVisualHome', 80);
   renderMoon('moonVisualMare', 80);
