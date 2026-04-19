@@ -1389,6 +1389,15 @@ const db = firebase.firestore();
 const LAT = -13.0033;
 const LON = -38.7669;
 
+// ---- GLOBAL UTILS ----
+function safeOpen(url) {
+  if (!url || url === '#' || url === '') return;
+  const cleanUrl = url.trim();
+  const finalUrl = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
+  console.log('Abrindo link seguro:', finalUrl);
+  window.open(finalUrl, '_blank');
+}
+
 // ---- NAVIGATION ----
 let currentScreen = 'home';
 const navMap = {
@@ -2392,13 +2401,6 @@ function listenSponsors() {
   });
 }
 
-function safeOpen(url) {
-  if (!url || url === '#') return;
-  const cleanUrl = url.trim();
-  const finalUrl = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
-  window.open(finalUrl, '_blank');
-}
-
 function renderSponsorCarousel() {
   const container = document.getElementById('sponsorCarousel');
   if (!container) return;
@@ -2439,11 +2441,12 @@ function renderSponsoredTip() {
   const tipEl = document.getElementById('fishTip');
   if (!tipEl || currentSponsors.length === 0) return;
   
+  // 40% de chance de mostrar patrocinado
   if (Math.random() < 0.4) {
     const s = currentSponsors[Math.floor(Math.random() * currentSponsors.length)];
     const tipSpan = tipEl.querySelector('span:last-child');
     if (tipSpan) {
-      tipSpan.innerHTML = `<strong>Dica do Parceiro (${s.nome}):</strong> ${s.frase}. <a href="${s.link}" target="_blank" style="color:var(--teal-light);text-decoration:none; font-weight: 700;">Saiba mais ➔</a>`;
+      tipSpan.innerHTML = `<strong>Dica do Parceiro (${s.nome}):</strong> ${s.frase}. <span onclick="safeOpen('${s.link}')" style="color:var(--teal-light);cursor:pointer; font-weight: 700; text-decoration: underline;">Saiba mais ➔</span>`;
       tipEl.style.borderColor = 'var(--teal)';
       tipEl.style.background = 'rgba(10, 191, 188, 0.15)';
     }
