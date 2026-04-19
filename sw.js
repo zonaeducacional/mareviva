@@ -8,7 +8,7 @@ const STATIC_CACHE = 'mare-viva-static-v1.3';
 const DATA_CACHE = 'mare-viva-data-v1.3';
 
 const STATIC_ASSETS = [
-  '/',
+  './',
   'index.html',
   'manifest.json',
   'icons/icon-192.png',
@@ -113,7 +113,7 @@ self.addEventListener('fetch', (event) => {
         return response;
       } catch {
         // Offline fallback
-        const fallback = await cache.match('/index.html');
+        const fallback = await cache.match('index.html');
         return fallback || new Response('Offline – Maré Viva', {
           status: 503,
           headers: { 'Content-Type': 'text/plain' }
@@ -141,8 +141,8 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'Maré Viva';
   const options = {
     body: data.body || 'Nova informação disponível',
-    icon: '/icons/icon-192.png',
-    badge: '/icons/icon-192.png',
+    icon: 'icons/icon-192.png',
+    badge: 'icons/icon-192.png',
     vibrate: [200, 100, 200],
     data: data,
     actions: [
@@ -156,9 +156,9 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   if (event.action === 'view') {
-    event.waitUntil(clients.openWindow('/index.html#mare'));
+    event.waitUntil(clients.openWindow('index.html#mare'));
   } else {
-    event.waitUntil(clients.openWindow('/index.html'));
+    event.waitUntil(clients.openWindow('index.html'));
   }
 });
 

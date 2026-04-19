@@ -2,7 +2,7 @@
   "name": "Maré Viva – Salinas da Margarida",
   "short_name": "Maré Viva",
   "description": "App para pescadores e marisqueiras de Salinas da Margarida, Bahia. Fases da lua, tábua de marés, tempo e pesca.",
-  "start_url": "/index.html",
+  "start_url": "index.html",
   "display": "standalone",
   "background_color": "#051829",
   "theme_color": "#0a2744",
@@ -43,14 +43,14 @@
       "name": "Tábua de Marés",
       "short_name": "Marés",
       "description": "Ver tábua de marés de hoje",
-      "url": "/index.html#mare",
+      "url": "index.html#mare",
       "icons": [{"src": "icons/icon-192.png", "sizes": "192x192"}]
     },
     {
       "name": "Nova Anotação",
       "short_name": "Anotar",
       "description": "Fazer uma nova anotação de pesca",
-      "url": "/index.html#notas",
+      "url": "index.html#notas",
       "icons": [{"src": "icons/icon-192.png", "sizes": "192x192"}]
     }
   ]
