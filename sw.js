@@ -3,9 +3,9 @@
 // Offline-First Strategy: Cache First, Network Fallback
 // ============================================================
 
-const CACHE_NAME = 'mare-viva-v1.4';
-const STATIC_CACHE = 'mare-viva-static-v1.4';
-const DATA_CACHE = 'mare-viva-data-v1.4';
+const CACHE_NAME = 'mare-viva-v1.5';
+const STATIC_CACHE = 'mare-viva-static-v1.5';
+const DATA_CACHE = 'mare-viva-data-v1.5';
 
 const STATIC_ASSETS = [
   './',
